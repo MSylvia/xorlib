@@ -170,7 +170,7 @@ int xocopy(struct xoimage* d, struct xoimage* s);       /* copy one image into a
 int xorcopy(struct xoimage* d, struct xoimage* s);      /* copy one image into another with xor -> 0 if not supported */
 int xopcopy(struct xoimage* d, struct xoimage* s, int x, int y, int w, int h); /* partial copy without mask */
 int xopcopyk(struct xoimage* d, struct xoimage* s, int x, int y, int w, int h, char c); /* partial copy with a key color */
-int xohighlight(int i, int l, int r);                   /* highlight segment of line i (-1 means all) from l to r -> 0 if not supported */
+int xohighlight(int y, int l, int r);                   /* highlight segment of line y (-1 means all) from l to r -> 0 if not supported */
 
 #ifdef __cplusplus
 }
