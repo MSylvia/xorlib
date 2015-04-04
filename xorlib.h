@@ -21,8 +21,8 @@ See for more info: http://www.xorlib.com
    DOS32 - for 32-bit DOS
    DOS16 - for 16-bit DOS
 
-   DECODEGIF - compiled with GIF decoder (see decode_gif folder)
-   DECODEJPG - compiled with JPG decoder (see decode_jpg folder)
+   DECODEGIF - compiled with GIF decoder (xdec_gif.c)
+   DECODEJPG - compiled with JPG decoder (xdec_jpg.c)
 */
 
 /* NTSC compatible modes - 256 bits per line (original) */
