@@ -35,13 +35,13 @@ extern FILE* xorlib_debug;
 
 unsigned long xorlib_frames = 0;
 unsigned long xorlib_seconds = 0;
-int xorlib_curline = 0;
-int xorlib_maxcol = 79;
-int xorlib_maxrow = 24;
-int xorlib_curcol = 0;
-int xorlib_currow = 0;
-int xorlib_curmode = -1;
-int xorlib_first = 1;
+short xorlib_curline = 0;
+unsigned char xorlib_maxcol = 79;
+unsigned char xorlib_maxrow = 24;
+unsigned char xorlib_curcol = 0;
+unsigned char xorlib_currow = 0;
+unsigned char xorlib_curmode = -1;
+unsigned char xorlib_first = 1;
 
 void xoexit(void)
 {
@@ -94,7 +94,7 @@ void xowaitvblank(void)
 {
 }
 
-int xochar(int x, int y, char c)
+int xochar(unsigned char x, unsigned char y, char c)
 {
   int i,j;
   if(xorlib_first) xofirst();

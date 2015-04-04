@@ -30,11 +30,11 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdarg.h>
 
-extern int xorlib_maxcol;
-extern int xorlib_maxrow;
-extern int xorlib_curcol;
-extern int xorlib_currow;
-extern int xorlib_curmode;
+extern unsigned char xorlib_maxcol;
+extern unsigned char xorlib_maxrow;
+extern unsigned char xorlib_curcol;
+extern unsigned char xorlib_currow;
+extern unsigned char xorlib_curmode;
 
 #define XORLIB_TEMPSTR_SZ 1024
 

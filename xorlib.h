@@ -2,8 +2,7 @@
 
 XORLib - old school game library for anyone
 ===========================================
-
-See for more info: http://www.xorlib.com
+See for more info:    http://www.xorlib.com
 
 */
 
@@ -14,8 +13,9 @@ See for more info: http://www.xorlib.com
 
 /* Available external macros:
 
-   PIC32 - for PIC32MX with 8 MHz crystal (black and white modes - better for 256x200)
-   PIC32NTSC - for PIC32MX with 14.31818 MHz crystal (color mode - better for 320x200 and 640x200)
+   PIC32NTSC - for PIC32MX with 8 MHz crystal and NTSC timings (black and white modes - better for 256x200)
+   PIC32NTSCQ - for PIC32MX with 14.31818 MHz crystal (color burst mode - better for 320x200 and 640x200)
+   PIC32PAL - for PIC32MX with 8 MHz crystal and PAL timings (black and white modes)
    DOS32 - for 32-bit DOS
    DOS16 - for 16-bit DOS
 */
@@ -131,45 +131,45 @@ extern "C" {
 
 /* System functions */
 
-unsigned long xoconfig(void);                           /* return configuration bits (see above) */
-unsigned long xocontrols(void);                         /* return state of controls (see above) */
-unsigned long xoframes(void);                           /* return frames counter */
-unsigned long xoseconds(void);                          /* return seconds counter */
-int xocurline(void);                                    /* return current line of the frame (0 is 1st line of the video) */
-void xowaitvblank(void);                                /* wait for vertical blank */
+unsigned long xoconfig(void);                   /* return configuration bits (see above) */
+unsigned long xocontrols(void);                 /* return state of controls (see above) */
+unsigned long xoframes(void);                   /* return frames counter */
+unsigned long xoseconds(void);                  /* return seconds counter */
+short xocurline(void);                          /* return current line of the frame (0 is 1st line of the video) */
+void xowaitvblank(void);                        /* wait for vertical blank */
 
 /* Graphics functions */
 
-int xoinit(int m, int o);                               /* set graphics mode with options -> 0 if failed */
-int xopixel(int x, int y, char c);                      /* draw a pixel (-1 means inversion) -> 0 if invalid args */
-int xoget(int x, int y);                                /* get state of the pixel (actual value) -> -1 if not supported */
-int xoline(int x1, int y1, int x2, int y2, char c);     /* draw a line with a color (-1 means inversion) */
-int xorect(int x, int y, int w, int h, char c);         /* draw a rectangular with a color (-1 means inversion) */
-int xobar(int x, int y, int w, int h, char c);          /* draw a solid rectangular with a color (-1 means inversion) */
-int xocircle(int x, int y, int r, char c);              /* draw a circle with a color (-1 means inversion) */
-int xoellipse(int x, int y, int rx, int ry, char c);    /* draw an oval with a color (-1 means inversion) */
-int xopie(int x, int y, int rx, int ry, int a1, int a2, char c); /* draw a solid piece of oval (-1 means inversion) */
-int xofill(int x, int y, char c);                       /* fill a region with a color (inversion is not applicable) */
-int xopolygon(int n, int *a);                           /* draw a polygon from array {x,y,c, x,y,c etc. } */
+int xoinit(short m);                                    /* set graphics mode -> 0 if failed */
+int xopixel(short x, short y, char c);                  /* draw a pixel (-1 means inversion) -> 0 if invalid args */
+int xoget(short x, short y);                            /* get state of the pixel (actual value) -> -1 if not supported */
+int xoline(short x1, short y1, short x2, short y2, char c); /* draw a line with a color (-1 means inversion) */
+int xorect(short x, short y, short w, short h, char c); /* draw a rectangular with a color (-1 means inversion) */
+int xobar(short x, short y, short w, short h, char c);  /* draw a solid rectangular with a color (-1 means inversion) */
+int xocircle(short x, short y, short r, char c);        /* draw a circle with a color (-1 means inversion) */
+int xoellipse(short x, short y, short rx, short ry, char c); /* draw an oval with a color (-1 means inversion) */
+int xopie(short x, short y, short rx, short ry, short a1, short a2, char c); /* draw a solid piece of oval (-1 means inversion) */
+int xofill(short x, short y, char c);                   /* fill a region with a color (inversion is not applicable) */
+int xopolygon(short n, short *a);                       /* draw a polygon from array {x,y,c, x,y,c etc. } */
 int xotextattr(char i, char p);                         /* set text color attributes (ink, paper) */
-int xochar(int x, int y, char c);                       /* print character using text location */
-int xostring(int x, int y, char* s);                    /* print string using text location */
+int xochar(unsigned char x, unsigned char y, char c);   /* print character using text location */
+int xostring(unsigned char x, unsigned char y, char* s); /* print string using text location */
 int xoprintf(char* s, ...);                             /* print string to current position with a possible scroll */
 int xouserchar(char c, unsigned char* p);               /* add user character with code 0...31 using 8 bytes -> 0 if error */
 int xotextwidth(void);                                  /* return text screen width */
 int xotextheight(void);                                 /* return text screen height */
-char xogray5(int i);                                    /* 5 shades of gray function (0,1,2,3,4) returns color */
-char xogray5a(int i);                                   /* 5 shades of gray function (0,1,2,3,4) returns ASCII code */
+char xogray5(char i);                                   /* 5 shades of gray function (0,1,2,3,4) returns color */
+char xogray5a(char i);                                  /* 5 shades of gray function (0,1,2,3,4) returns ASCII code */
 void xoswitchscreens(void);                             /* switch primary and secondary screens (in case of double buffering) */
 int xouseprimary(void);                                 /* use primary screen (default) */
 int xousesecondary(void);                               /* use secondary screen (in case of double buffering) */
-int* xolinedirect(int y);                               /* return pointer to video line for direct access */
+int* xolinedirect(short y);                             /* return pointer to video line for direct access */
 int* xoprevline(int *p);                                /* return pointer to the previous video line for direct access */
 int* xonextline(int *p);                                /* return pointer to the next video line for direct access */
 int xocopy(struct xoimage* d, struct xoimage* s);       /* copy one image into another with mask if presented */
 int xorcopy(struct xoimage* d, struct xoimage* s);      /* copy one image into another with xor -> 0 if not supported */
-int xopcopy(struct xoimage* d, struct xoimage* s, int x, int y, int w, int h); /* partial copy without mask */
-int xopcopyk(struct xoimage* d, struct xoimage* s, int x, int y, int w, int h, char c); /* partial copy with a key color */
+int xopcopy(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h); /* partial copy without mask */
+int xopcopyk(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h, char c); /* partial copy with a key color */
 
 #ifdef __cplusplus
 }
