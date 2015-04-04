@@ -1,4 +1,4 @@
-# XORLib - old school game library for anyone
+# XORLib - old school game library
 
 Library created by Alexander A. Shabarshin and it's covered by MIT-license.
 Targeted platforms: PIC32 with NTSC and PAL TV, and also DOS with CGA/EGA/VGA.
