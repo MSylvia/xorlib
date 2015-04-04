@@ -156,14 +156,14 @@ int xochar(unsigned char x, unsigned char y, char c);   /* print character using
 int xostring(unsigned char x, unsigned char y, char* s); /* print string using text location */
 int xoprintf(char* s, ...);                             /* print string to current position with a possible scroll */
 int xouserchar(char c, unsigned char* p);               /* add user character with code 0...31 using 8 bytes -> 0 if error */
-int xotextwidth(void);                                  /* return text screen width */
-int xotextheight(void);                                 /* return text screen height */
-char xogray5(char i);                                   /* 5 shades of gray function (0,1,2,3,4) returns color */
-char xogray5a(char i);                                  /* 5 shades of gray function (0,1,2,3,4) returns ASCII code */
+unsigned char xotextwidth(void);                        /* return text screen width */
+unsigned char xotextheight(void);                       /* return text screen height */
+char xogray5(int i);                                    /* 5 shades of gray function (0,1,2,3,4) returns color */
+char xogray5a(int i);                                   /* 5 shades of gray function (0,1,2,3,4) returns ASCII code */
 void xoswitchscreens(void);                             /* switch primary and secondary screens (in case of double buffering) */
 int xouseprimary(void);                                 /* use primary screen (default) */
 int xousesecondary(void);                               /* use secondary screen (in case of double buffering) */
-int* xolinedirect(short y);                             /* return pointer to video line for direct access */
+int* xodirectline(short y);                             /* return pointer to video line for direct access */
 int* xoprevline(int *p);                                /* return pointer to the previous video line for direct access */
 int* xonextline(int *p);                                /* return pointer to the next video line for direct access */
 int xocopy(struct xoimage* d, struct xoimage* s);       /* copy one image into another with mask if presented */
