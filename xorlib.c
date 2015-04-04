@@ -1,7 +1,7 @@
 /*
 
-XORLib - old school game library for anyone
-===========================================
+XORLib - old school game library licenced under the MIT License
+===============================================================
 
 Copyright (c) 2015 A.A.Shabarshin <me@shaos.net>
 

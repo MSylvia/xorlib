@@ -1,13 +1,14 @@
 /*
 
-XORLib - old school game library for anyone
-===========================================
-See for more info:    http://www.xorlib.com
+XORLib - old school game library licenced under the MIT License
+===============================================================
+
+See for more info: http://www.xorlib.com
 
 */
 
-#ifndef XORLIB_H
-#define XORLIB_H
+#ifndef _XORLIB_H_
+#define _XORLIB_H_
 
 #define XORLIB_VERSION 0x0001 /* v0.1 */
 
@@ -16,8 +17,12 @@ See for more info:    http://www.xorlib.com
    PIC32NTSC - for PIC32MX with 8 MHz crystal and NTSC timings (black and white modes - better for 256x200)
    PIC32NTSCQ - for PIC32MX with 14.31818 MHz crystal (color burst mode - better for 320x200 and 640x200)
    PIC32PAL - for PIC32MX with 8 MHz crystal and PAL timings (black and white modes)
+   PIC32VGA - experimental mode for PIC32MX connected to VGA monitor (future)
    DOS32 - for 32-bit DOS
    DOS16 - for 16-bit DOS
+
+   DECODEGIF - compiled with GIF decoder (see decode_gif folder)
+   DECODEJPG - compiled with JPG decoder (see decode_jpg folder)
 */
 
 /* NTSC compatible modes - 256 bits per line (original) */
@@ -68,11 +73,11 @@ See for more info:    http://www.xorlib.com
 /*
    Virtual 5 shades of gray:
 
-   XOCOLOR_BLACK
-   XOCOLOR_GRAY
-   XOCOLOR_BRIGHT_GRAY
-   XOCOLOR_WHITE
-   XOCOLOR_BRIGHT_WHITE
+   xogray5(0) -> XOCOLOR_BLACK
+   xogray5(1) -> XOCOLOR_GRAY
+   xogray5(2) -> XOCOLOR_BRIGHT_GRAY
+   xogray5(3) -> XOCOLOR_WHITE
+   xogray5(4) -> XOCOLOR_BRIGHT_WHITE
 */
 
 /* Configuration flags (bits 0..15 for supported graphics modes) */
@@ -109,7 +114,7 @@ See for more info:    http://www.xorlib.com
 /* Optional control bits */
 #define XOCONTROL_LSHOULDER 0x0100 /* bit 8 */
 #define XOCONTROL_RSHOULDER 0x0200 /* bit 9 */
-#define XOCONTROL_KEYREADY  0x0400 /* bit 10 - keyboard buffer is not empty */
+#define XOCONTROL_KEYREADY  0x1000 /* bit 12 - keyboard buffer is not empty */
 
 struct xoimage
 {
