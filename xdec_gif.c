@@ -1,6 +1,17 @@
-/* xdec_gif.c for XORLib by Shaos based on libnsgif (April 2015) */
-
-/*
+/* xdec_gif.c for XORLib by Shaos based on libnsgif (April 2015)
+ *
+ * Changes from libnsgif:
+ * - libnsgif.h and libnsgif.c were combined in this single file
+ * - removed asserts
+ * - changed bools to unsigned chars
+ * - changed some types in structures
+ * - color tables are static now (no memory allocation for it)
+ * - reallocate frame data by bigger portions (2x bigger than previously allocated)
+ * - made big-endian friendly
+ * - added support for 1-bit, 4-bit and 8-bit buffers (with color maps)
+ *
+ * See original copyrights below:
+ *
  * Copyright 2004 Richard Wilson <richard.wilson@netsurf-browser.org>
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  *
@@ -9,16 +20,24 @@
  *                http://www.opensource.org/licenses/mit-license.php
  */
 
+#define malloc my_malloc
+#define realloc my_realloc
+#define free my_free
+
+void* my_malloc(unsigned long s);
+void* my_realloc(void* p, unsigned long s);
+void my_free(void* p);
+
 /** \file
  * Progressive animated GIF file decoding (interface).
  */
 /*
 #ifndef _LIBNSGIF_H_
 #define _LIBNSGIF_H_
-*/
+
 #include <stdbool.h>
 #include <inttypes.h>
-
+*/
 /*	Error return values
 */
 typedef enum {
@@ -36,30 +55,30 @@ typedef enum {
 /*	The GIF frame data
 */
 typedef struct gif_frame {
-  	bool display;				/**< whether the frame should be displayed/animated */
-  	unsigned int frame_delay;		/**< delay (in cs) before animating the frame */
+  	unsigned char display;			/**< whether the frame should be displayed/animated */
+  	unsigned short frame_delay;		/**< delay (in cs) before animating the frame */
 	/**	Internal members are listed below
 	*/
-  	unsigned int frame_pointer;		/**< offset (in bytes) to the GIF frame data */
-  	bool virgin;				/**< whether the frame has previously been used */
-	bool opaque;				/**< whether the frame is totally opaque */
-	bool redraw_required;			/**< whether a forcable screen redraw is required */
+  	unsigned long frame_pointer;		/**< offset (in bytes) to the GIF frame data */
+  	unsigned char virgin;			/**< whether the frame has previously been used */
+	unsigned char opaque;			/**< whether the frame is totally opaque */
+	unsigned char redraw_required;		/**< whether a forcable screen redraw is required */
 	unsigned char disposal_method;		/**< how the previous frame should be disposed; affects plotting */
-	bool transparency;	 		/**< whether we acknoledge transparency */
+	unsigned char transparency;	 	/**< whether we acknoledge transparency */
 	unsigned char transparency_index;	/**< the index designating a transparent pixel */
-	unsigned int redraw_x;			/**< x co-ordinate of redraw rectangle */
-	unsigned int redraw_y;			/**< y co-ordinate of redraw rectangle */
-	unsigned int redraw_width;		/**< width of redraw rectangle */
-	unsigned int redraw_height;		/**< height of redraw rectangle */
+	unsigned short redraw_x;		/**< x co-ordinate of redraw rectangle */
+	unsigned short redraw_y;		/**< y co-ordinate of redraw rectangle */
+	unsigned short redraw_width;		/**< width of redraw rectangle */
+	unsigned short redraw_height;		/**< height of redraw rectangle */
 } gif_frame;
 
 /*	API for Bitmap callbacks
 */
-typedef void* (*gif_bitmap_cb_create)(int width, int height);
+typedef void* (*gif_bitmap_cb_create)(int width, int height, int* bpp, unsigned long** map); /* SH-04.04.2015: extended with bpp and map pointers */
 typedef void (*gif_bitmap_cb_destroy)(void *bitmap);
 typedef unsigned char* (*gif_bitmap_cb_get_buffer)(void *bitmap);
-typedef void (*gif_bitmap_cb_set_opaque)(void *bitmap, bool opaque);
-typedef bool (*gif_bitmap_cb_test_opaque)(void *bitmap);
+typedef void (*gif_bitmap_cb_set_opaque)(void *bitmap, unsigned char opaque);
+typedef unsigned char (*gif_bitmap_cb_test_opaque)(void *bitmap);
 typedef void (*gif_bitmap_cb_modified)(void *bitmap);
 
 /*	The Bitmap callbacks function table
@@ -72,7 +91,7 @@ typedef struct gif_bitmap_callback_vt {
 	*/
 	gif_bitmap_cb_set_opaque bitmap_set_opaque;	/**< Sets whether a bitmap should be plotted opaque. */
 	gif_bitmap_cb_test_opaque bitmap_test_opaque;	/**< Tests whether a bitmap has an opaque alpha channel. */
-	gif_bitmap_cb_modified bitmap_modified;	/**< The bitmap image has changed, so flush any persistant cache. */
+	gif_bitmap_cb_modified bitmap_modified;		/**< The bitmap image has changed, so flush any persistant cache. */
 } gif_bitmap_callback_vt;
 
 /*	The GIF animation data
@@ -80,26 +99,29 @@ typedef struct gif_bitmap_callback_vt {
 typedef struct gif_animation {
 	gif_bitmap_callback_vt bitmap_callbacks;	/**< callbacks for bitmap functions */
 	unsigned char *gif_data;			/**< pointer to GIF data */
-	unsigned int width;				/**< width of GIF (may increase during decoding) */
-	unsigned int height;				/**< heigth of GIF (may increase during decoding) */
-	unsigned int frame_count;			/**< number of frames decoded */
-	unsigned int frame_count_partial;		/**< number of frames partially decoded */
+	unsigned short width;				/**< width of GIF (may increase during decoding) */
+	unsigned short height;				/**< heigth of GIF (may increase during decoding) */
+	unsigned short frame_count;			/**< number of frames decoded */
+	unsigned short frame_count_partial;		/**< number of frames partially decoded */
 	gif_frame *frames;				/**< decoded frames */
-	int decoded_frame;				/**< current frame decoded to bitmap */
+	short decoded_frame;				/**< current frame decoded to bitmap */
 	void *frame_image;				/**< currently decoded image; stored as bitmap from bitmap_create callback */
-	int loop_count;					/**< number of times to loop animation */
+	int bpp;					/**< SH-04.04.2015: extension to have compact decoded image (bits per pixel:1,4,8,32) */
+	unsigned long* map;				/**< SH-04.04.2015: extension to have compact decoded image (suitable for bpp=1/4/8) */
+	short loop_count;				/**< number of times to loop animation */
 	gif_result current_error;			/**< current error type, or 0 for none*/
 	/**	Internal members are listed below
 	*/
-	unsigned int buffer_position;			/**< current index into GIF data */
-	unsigned int buffer_size;			/**< total number of bytes of GIF data available */
-	unsigned int frame_holders;			/**< current number of frame holders */
-	unsigned int background_index;			/**< index in the colour table for the background colour */
-	unsigned int aspect_ratio;			/**< image aspect ratio (ignored) */
-	unsigned int colour_table_size;		/**< size of colour table (in entries) */
-	bool global_colours;				/**< whether the GIF has a global colour table */
-	unsigned int *global_colour_table;		/**< global colour table */
-	unsigned int *local_colour_table;		/**< local colour table */
+	unsigned long buffer_position;			/**< current index into GIF data */
+	unsigned long buffer_size;			/**< total number of bytes of GIF data available */
+	unsigned short frame_holders;			/**< current number of frame holders */
+	unsigned char background_index;			/**< index in the colour table for the background colour */
+/*	unsigned int aspect_ratio;*/			/**< image aspect ratio (ignored) */
+	unsigned char colour_table_size;			/**< size of colour table (in entries) */
+	unsigned char global_colours;			/**< whether the GIF has a global colour table */
+	unsigned long global_colour_table[256];		/**< global colour table SH-04.04.2015: array of longs! */
+	unsigned long local_colour_table[256];		/**< local colour table SH-04.04.2015: array of longs! */
+	/* SH-04.04.2015: colour format is 0xAABBGGRR and we will reuse AA because it's useless for color map... */
 } gif_animation;
 
 void gif_create(gif_animation *gif, gif_bitmap_callback_vt *bitmap_callbacks);
@@ -109,6 +131,7 @@ void gif_finalise(gif_animation *gif);
 /*
 #endif
 */
+
 /*
  * Copyright 2004 Richard Wilson <richard.wilson@netsurf-browser.org>
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
@@ -118,13 +141,13 @@ void gif_finalise(gif_animation *gif);
  *                http://www.opensource.org/licenses/mit-license.php
  */
 
-#include <stdbool.h>
+/*#include <stdbool.h>*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
+/*#include <assert.h>*/
 /*#include "libnsgif.h"*/
-#include "utils/log.h"
+/*#include "utils/log.h"*/
 
 /*	READING GIF FILES
 	=================
@@ -180,9 +203,9 @@ void gif_finalise(gif_animation *gif);
 */
 #define GIF_MAX_COLOURS 256
 
-/*	Internal flag that the colour table needs to be processed
+/*	Internal flag that the colour table needs to be processed (SH-04.04.2015: make more As...)
 */
-#define GIF_PROCESS_COLOURS 0xaa000000
+#define GIF_PROCESS_COLOURS 0xAAAAAAAA
 
 /*	Internal flag that a frame is invalid/unprocessed
 */
@@ -229,7 +252,7 @@ static unsigned int gif_interlaced_line(int height, int y);
 /*	Internal LZW routines
 */
 static void gif_init_LZW(gif_animation *gif);
-static bool gif_next_LZW(gif_animation *gif);
+static unsigned char gif_next_LZW(gif_animation *gif);
 static int gif_next_code(gif_animation *gif, int code_size);
 
 /*	General LZW values. They are shared for all GIFs being decoded, and
@@ -248,12 +271,12 @@ static int max_code, max_code_size;
 static int clear_code, end_code;
 static int curbit, lastbit, last_byte;
 static int firstcode, oldcode;
-static bool zero_data_block = false;
-static bool get_done;
+static unsigned char zero_data_block = 0;
+static unsigned char get_done;
 
 /*	Whether to clear the decoded image rather than plot
 */
-static bool clear_image = false;
+static unsigned char clear_image = 0;
 
 
 
@@ -310,9 +333,10 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 		*/
 		gif->frame_image = NULL;
 		gif->frames = NULL;
+/*
 		gif->local_colour_table = NULL;
 		gif->global_colour_table = NULL;
-
+*/
 		/*	The caller may have been lazy and not reset any values
 		*/
 		gif->frame_count = 0;
@@ -349,10 +373,10 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 		 */
 		gif->width = gif_data[0] | (gif_data[1] << 8);
 		gif->height = gif_data[2] | (gif_data[3] << 8);
-		gif->global_colours = (gif_data[4] & GIF_COLOUR_TABLE_MASK);
+		gif->global_colours = (gif_data[4] & GIF_COLOUR_TABLE_MASK)?1:0;
 		gif->colour_table_size = (2 << (gif_data[4] & GIF_COLOUR_TABLE_SIZE_MASK));
 		gif->background_index = gif_data[5];
-		gif->aspect_ratio = gif_data[6];
+/*		gif->aspect_ratio = gif_data[6];*/
 		gif->loop_count = 1;
 		gif_data += 7;
 
@@ -375,14 +399,17 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 		/*	Allocate some data irrespective of whether we've got any colour tables. We
 			always get the maximum size in case a GIF is lying to us. It's far better
 			to give the wrong colours than to trample over some memory somewhere.
+			
+			SH-04.04.2015: no allocations here, because colour tables are now static arrays
 		*/
+/*
 		gif->global_colour_table = calloc(GIF_MAX_COLOURS, sizeof(unsigned int));
 		gif->local_colour_table = calloc(GIF_MAX_COLOURS, sizeof(unsigned int));
 		if ((gif->global_colour_table == NULL) || (gif->local_colour_table == NULL)) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-
+*/
 		/*	Set the first colour to a value that will never occur in reality so we
 			know if we've processed it
 		*/
@@ -398,18 +425,18 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 				return GIF_INSUFFICIENT_DATA;
 		}
 
-		/*	Initialise enough workspace for 4 frames initially
+		/*	Initialise enough workspace for 10 frames initially (SH-04.04.2015)
 		*/
-		if ((gif->frames = (gif_frame *)malloc(sizeof(gif_frame))) == NULL) {
+		if ((gif->frames = (gif_frame *)malloc(10 * sizeof(gif_frame))) == NULL) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-		gif->frame_holders = 1;
+		gif->frame_holders = 10;
 
 		/*	Initialise the sprite header
 		*/
-		assert(gif->bitmap_callbacks.bitmap_create);
-		if ((gif->frame_image = gif->bitmap_callbacks.bitmap_create(gif->width, gif->height)) == NULL) {
+		/*assert(gif->bitmap_callbacks.bitmap_create);*/
+		if ((gif->frame_image = gif->bitmap_callbacks.bitmap_create(gif->width, gif->height, &gif->bpp, &gif->map)) == NULL) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
@@ -437,27 +464,29 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 				 * is in byte 0 and the alpha component is in
 				 * byte 3.
 				 */
+#if 0
 				unsigned char *entry = (unsigned char *) &gif->
 						global_colour_table[index];
-
 				entry[0] = gif_data[0];	/* r */
 				entry[1] = gif_data[1];	/* g */
 				entry[2] = gif_data[2];	/* b */
 				entry[3] = 0xff;	/* a */
-
+#else
+/* SH-04.04.2015: big-endian friendly code: */
+				gif->global_colour_table[index] = 0xFF000000 |
+					(gif_data[2]<<16) | (gif_data[1]<<8) | gif_data[0];
+#endif
 				gif_data += 3;
 			}
 			gif->buffer_position = (gif_data - gif->gif_data);
 		} else {
 			/*	Create a default colour table with the first two colours as black and white
 			*/
-			unsigned int *entry = gif->global_colour_table;
+			unsigned long *entry = gif->global_colour_table;
 
-			entry[0] = 0x00000000;
-			/* Force Alpha channel to opaque */
-			((unsigned char *) entry)[3] = 0xff;
-
-			entry[1] = 0xffffffff;
+			entry[0] = 0xFF000000;
+			/* Force Alpha channel to opaque TODO: big-endian? */
+			entry[1] = 0xFFFFFFFF;
 		}
 	}
 
@@ -505,10 +534,10 @@ static gif_result gif_initialise_sprite(gif_animation *gif, unsigned int width, 
 
 	/*	Allocate some more memory
 	*/
-	assert(gif->bitmap_callbacks.bitmap_create);
-	if ((buffer = gif->bitmap_callbacks.bitmap_create(max_width, max_height)) == NULL)
+	/*assert(gif->bitmap_callbacks.bitmap_create);*/
+	if ((buffer = gif->bitmap_callbacks.bitmap_create(max_width, max_height, NULL, NULL)) == NULL)
 		return GIF_INSUFFICIENT_MEMORY;
-	assert(gif->bitmap_callbacks.bitmap_destroy);
+	/*assert(gif->bitmap_callbacks.bitmap_destroy);*/
 	gif->bitmap_callbacks.bitmap_destroy(gif->frame_image);
 	gif->frame_image = buffer;
 	gif->width = max_width;
@@ -540,7 +569,7 @@ static gif_result gif_initialise_frame(gif_animation *gif) {
 	unsigned int flags = 0;
 	unsigned int width, height, offset_x, offset_y;
 	unsigned int block_size, colour_table_size;
-	bool first_image = true;
+	unsigned char first_image = 1;
 	gif_result return_value;
 
 	/*	Get the frame to decode and our data position
@@ -573,22 +602,22 @@ static gif_result gif_initialise_frame(gif_animation *gif) {
 		/*	Allocate more memory
 		*/
 		if ((temp_buf = (gif_frame *)realloc(gif->frames,
-					(frame + 1) * sizeof(gif_frame))) == NULL)
+					(frame * 2) * sizeof(gif_frame))) == NULL) /* SH-04.04.2015: more memory */
 			return GIF_INSUFFICIENT_MEMORY;
 		gif->frames = temp_buf;
-		gif->frame_holders = frame + 1;
+		gif->frame_holders = frame * 2; /* SH-04.04.2015: more memory */
 	}
 
 	/*	Store our frame pointer. We would do it when allocating except we
 		start off with one frame allocated so we can always use realloc.
 	*/
 	gif->frames[frame].frame_pointer = gif->buffer_position;
-	gif->frames[frame].display = false;
-	gif->frames[frame].virgin = true;
+	gif->frames[frame].display = 0;
+	gif->frames[frame].virgin = 1;
 	gif->frames[frame].disposal_method = 0;
-	gif->frames[frame].transparency = false;
+	gif->frames[frame].transparency = 0;
 	gif->frames[frame].frame_delay = 100;
-	gif->frames[frame].redraw_required = false;
+	gif->frames[frame].redraw_required = 0;
 
 	/*	Invalidate any previous decoding we have of this frame
 	*/
@@ -646,7 +675,7 @@ static gif_result gif_initialise_frame(gif_animation *gif) {
 		if ((offset_y + height) > (gif->frames[frame].redraw_y + gif->frames[frame].redraw_height))
 			gif->frames[frame].redraw_height = (offset_y + height) - gif->frames[frame].redraw_y;
 	} else {
-		first_image = false;
+		first_image = 0;
 		gif->frames[frame].redraw_x = offset_x;
 		gif->frames[frame].redraw_y = offset_y;
 		gif->frames[frame].redraw_width = width;
@@ -727,7 +756,7 @@ static gif_result gif_initialise_frame(gif_animation *gif) {
 	*/
 	gif->buffer_position = gif_data - gif->gif_data;
 	gif->frame_count = frame + 1;
-	gif->frames[frame].display = true;
+	gif->frames[frame].display = 1;
 
 	/*	Check if we've finished
 	*/
@@ -778,7 +807,7 @@ static gif_result gif_initialise_frame_extensions(gif_animation *gif, const int 
 				if (gif_bytes < 6) return GIF_INSUFFICIENT_FRAME_DATA;
 				gif->frames[frame].frame_delay = gif_data[3] | (gif_data[4] << 8);
 				if (gif_data[2] & GIF_TRANSPARENCY_MASK) {
-					gif->frames[frame].transparency = true;
+					gif->frames[frame].transparency = 1;
 					gif->frames[frame].transparency_index = gif_data[5];
 				}
 				gif->frames[frame].disposal_method = ((gif_data[2] & GIF_DISPOSAL_MASK) >> 2);
@@ -865,9 +894,9 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 	int gif_bytes;
 	unsigned int width, height, offset_x, offset_y;
 	unsigned int flags, colour_table_size, interlace;
-	unsigned int *colour_table;
-	unsigned int *frame_data = 0;	// Set to 0 for no warnings
-	unsigned int *frame_scanline;
+	unsigned long *colour_table;
+	unsigned long *frame_data = 0;	// Set to 0 for no warnings
+	unsigned long *frame_scanline;
 	unsigned int save_buffer_position;
 	unsigned int return_value = 0;
 	unsigned int x, y, decode_y, burst_bytes;
@@ -876,7 +905,7 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 
 	/*	Ensure this frame is supposed to be decoded
 	*/
-	if (gif->frames[frame].display == false) {
+	if (gif->frames[frame].display == 0) {
 		gif->current_error = GIF_FRAME_NO_DISPLAY;
 		return GIF_OK;
 	}
@@ -953,7 +982,7 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 	*/
 	flags = gif_data[9];
 	colour_table_size = 2 << (flags & GIF_COLOUR_TABLE_SIZE_MASK);
-	interlace = flags & GIF_INTERLACE_MASK;
+	interlace = (flags & GIF_INTERLACE_MASK)?1:0;
 
 	/*	Move our pointer to the colour table or image data (if no colour table is given)
 	*/
@@ -977,6 +1006,7 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 				 * is in byte 0 and the alpha component is in
 				 * byte 3.
 				 */
+#if 0
 				unsigned char *entry = 
 					(unsigned char *) &colour_table[index];
 
@@ -984,7 +1014,11 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 				entry[1] = gif_data[1];	/* g */
 				entry[2] = gif_data[2];	/* b */
 				entry[3] = 0xff;	/* a */
-
+#else
+/* SH-04.04.2015: big-endian friendly code: */
+				colour_table[index] = 0xFF000000 |
+					(gif_data[2]<<16) | (gif_data[1]<<8) | gif_data[0];
+#endif
 				gif_data += 3;
 			}
 		} else {
@@ -1007,7 +1041,7 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 
 	/*	Get the frame data
 	*/
-	assert(gif->bitmap_callbacks.bitmap_get_buffer);
+	/*assert(gif->bitmap_callbacks.bitmap_get_buffer);*/
 	frame_data = (void *)gif->bitmap_callbacks.bitmap_get_buffer(gif->frame_image);
 	if (!frame_data)
 		return GIF_INSUFFICIENT_MEMORY;
@@ -1037,10 +1071,10 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 			 * transparency we likely wouldn't want to do that. */
 			/* memset((char*)frame_data, colour_table[gif->background_index], gif->width * gif->height * sizeof(int)); */
 		} else if ((frame != 0) && (gif->frames[frame - 1].disposal_method == GIF_FRAME_CLEAR)) {
-			clear_image = true;
+			clear_image = 1;
 			if ((return_value = gif_decode_frame(gif, (frame - 1))) != GIF_OK)
 				goto gif_decode_frame_exit;
-			clear_image = false;
+			clear_image = 0;
 		/*	If the previous frame's disposal method requires we restore the previous
 		 *	image, find the last image set to "do not dispose" and get that frame data
 		*/
@@ -1058,7 +1092,7 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 					goto gif_decode_frame_exit;
 				/*	Get this frame's data
 				*/
-				assert(gif->bitmap_callbacks.bitmap_get_buffer);
+				/*assert(gif->bitmap_callbacks.bitmap_get_buffer);*/
 				frame_data = (void *)gif->bitmap_callbacks.bitmap_get_buffer(gif->frame_image);
 				if (!frame_data)
 					return GIF_INSUFFICIENT_MEMORY;
@@ -1080,7 +1114,7 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 		max_code = clear_code + 2;
 		curbit = lastbit = 0;
 		last_byte = 2;
-		get_done = false;
+		get_done = 0;
 		direct = buf;
 		gif_init_LZW(gif);
 
@@ -1145,8 +1179,8 @@ gif_decode_frame_exit:
 		if (gif->bitmap_callbacks.bitmap_test_opaque)
 			gif->frames[frame].opaque = gif->bitmap_callbacks.bitmap_test_opaque(gif->frame_image);
 		else
-			gif->frames[frame].opaque = false;
-		gif->frames[frame].virgin = false;
+			gif->frames[frame].opaque = 0;
+		gif->frames[frame].virgin = 0;
 	}
 	if (gif->bitmap_callbacks.bitmap_set_opaque)
 		gif->bitmap_callbacks.bitmap_set_opaque(gif->frame_image, gif->frames[frame].opaque);
@@ -1238,16 +1272,18 @@ void gif_finalise(gif_animation *gif) {
 	/*	Release all our memory blocks
 	*/
 	if (gif->frame_image) {
-		assert(gif->bitmap_callbacks.bitmap_destroy);
+		/*assert(gif->bitmap_callbacks.bitmap_destroy);*/
 		gif->bitmap_callbacks.bitmap_destroy(gif->frame_image);
 	}
 	gif->frame_image = NULL;
 	free(gif->frames);
 	gif->frames = NULL;
+/*
 	free(gif->local_colour_table);
 	gif->local_colour_table = NULL;
 	free(gif->global_colour_table);
 	gif->global_colour_table = NULL;
+*/
 }
 
 /**
@@ -1280,7 +1316,7 @@ void gif_init_LZW(gif_animation *gif) {
 }
 
 
-static bool gif_next_LZW(gif_animation *gif) {
+static unsigned char gif_next_LZW(gif_animation *gif) {
 	int code, incode;
 	int block_size;
 	int new_code;
@@ -1288,15 +1324,15 @@ static bool gif_next_LZW(gif_animation *gif) {
 	code = gif_next_code(gif, code_size);
 	if (code < 0) {
 	  	gif->current_error = code;
-		return false;
+		return 0;
 	} else if (code == clear_code) {
 		gif_init_LZW(gif);
-		return true;
+		return 1;
 	} else if (code == end_code) {
 		/* skip to the end of our data so multi-image GIFs work */
 		if (zero_data_block) {
 			gif->current_error = GIF_FRAME_DATA_ERROR;
-			return false;
+			return 0;
 		}
 		block_size = 0;
 		while (block_size != 1) {
@@ -1304,7 +1340,7 @@ static bool gif_next_LZW(gif_animation *gif) {
 			gif->buffer_position += block_size;
 		}
 		gif->current_error = GIF_FRAME_DATA_ERROR;
-		return false;
+		return 0;
 	}
 
 	incode = code;
@@ -1328,7 +1364,7 @@ static bool gif_next_LZW(gif_animation *gif) {
 		code = table[0][new_code];
 		if (code == new_code) {
 		  	gif->current_error = GIF_FRAME_DATA_ERROR;
-			return false;
+			return 0;
 		}
 	}
 
@@ -1344,7 +1380,7 @@ static bool gif_next_LZW(gif_animation *gif) {
 		}
 	}
 	oldcode = incode;
-	return true;
+	return 1;
 }
 
 static int gif_next_code(gif_animation *gif, int code_size) {
@@ -1364,7 +1400,7 @@ static int gif_next_code(gif_animation *gif, int code_size) {
 		if ((gif->buffer_position + count) >= gif->buffer_size)
 			return GIF_INSUFFICIENT_FRAME_DATA;
 		if (count == 0)
-			get_done = true;
+			get_done = 1;
 		else {
 			direct -= 1;
 			buf[2] = direct[2];
@@ -1398,3 +1434,27 @@ static int gif_next_code(gif_animation *gif, int code_size) {
 }
 
 /*<><><><><><><><><><><><><><> XORLib interface <><><><><><><><><><><><><><>*/
+
+#undef malloc
+#undef realloc
+#undef free
+
+void* my_malloc(unsigned long s)
+{
+  void* p = malloc(s);
+  printf(">>> malloc %lu\t-> 0x%8.8X\n",s,p);
+  return p;
+}
+
+void* my_realloc(void* p, unsigned long s)
+{
+  void* pp = realloc(p,s);
+  printf(">>> realloc 0x%8.8X %lu\t-> 0x%8.8X\n",p,s,pp);
+  return pp;
+}
+
+void my_free(void* p)
+{
+  printf(">>> free 0x%8.8X\n",p);
+  free(p);
+}
