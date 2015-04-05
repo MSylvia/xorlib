@@ -116,8 +116,8 @@ typedef struct gif_animation {
 	unsigned long buffer_size;			/**< total number of bytes of GIF data available */
 	unsigned short frame_holders;			/**< current number of frame holders */
 	unsigned char background_index;			/**< index in the colour table for the background colour */
-/*	unsigned int aspect_ratio;*/			/**< image aspect ratio (ignored) */
-	unsigned char colour_table_size;			/**< size of colour table (in entries) */
+	unsigned int aspect_ratio;			/**< image aspect ratio (ignored for now) */
+	unsigned short colour_table_size;		/**< size of colour table (in entries) */
 	unsigned char global_colours;			/**< whether the GIF has a global colour table */
 	unsigned long global_colour_table[256];		/**< global colour table SH-04.04.2015: array of longs! */
 	unsigned long local_colour_table[256];		/**< local colour table SH-04.04.2015: array of longs! */
@@ -196,8 +196,26 @@ void gif_finalise(gif_animation *gif);
 	interest in doing so.
 */
 
+/*	EXTENSIONS FOR PIC32
+	====================
 
-
+	I extended bitmap_create callback with two additional parameters:
+	- pointer to int bpp (bits per pixel) of output video device;
+	- pointer to pointer to unsigned long for optional color map of output device.
+	Purpose of this map is to reduce size of the buffer for embedded applications.
+	Default value of bpp is 32 and in this case behavior is the same as before -
+	no map and buffer has 32-bit integers with full AABBGGRR color info per pixel.
+	If output video device is not supporting full color then user may use smaller
+	numbers for bpp - 8 for byte per pixel, 4 for 2 pixels per byte and 1 for
+	8 pixels per byte. To map colors the program needs to have a color map with
+	256 entries for bpp=8 (buffer is 4 times smaller), 16 entries for bpp=4
+	(buffer is 8 times smaller) and 2 entries for bpp=1 (buffer is 32 times smaller).
+	Mapping colors are happening in moment of reading color tables from GIF file -
+	program simply chooses closest color from provided map for every GIF color and
+	store index in highest bytes of color table entry (instead of alpha).
+	
+	Shaos, Sat 4th April 2015
+*/
 
 /*	Maximum colour table size
 */
@@ -376,7 +394,9 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 		gif->global_colours = (gif_data[4] & GIF_COLOUR_TABLE_MASK)?1:0;
 		gif->colour_table_size = (2 << (gif_data[4] & GIF_COLOUR_TABLE_SIZE_MASK));
 		gif->background_index = gif_data[5];
-/*		gif->aspect_ratio = gif_data[6];*/
+		gif->aspect_ratio = gif_data[6];
+		gif->bpp = 32; /* SH-04.04.2015: default value is 32 bits per pixel */
+		gif->map = NULL; /* SH-04.04.2015: default value is NULL (no map) */
 		gif->loop_count = 1;
 		gif_data += 7;
 
@@ -492,7 +512,9 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 
 	/*	Repeatedly try to initialise frames
 	*/
-	while ((return_value = gif_initialise_frame(gif)) == GIF_WORKING);
+	while ((return_value = gif_initialise_frame(gif)) == GIF_WORKING)
+	{
+	}
 
 	/*	If there was a memory error tell the caller
 	*/
@@ -534,11 +556,12 @@ static gif_result gif_initialise_sprite(gif_animation *gif, unsigned int width, 
 
 	/*	Allocate some more memory
 	*/
-	/*assert(gif->bitmap_callbacks.bitmap_create);*/
-	if ((buffer = gif->bitmap_callbacks.bitmap_create(max_width, max_height, NULL, NULL)) == NULL)
-		return GIF_INSUFFICIENT_MEMORY;
 	/*assert(gif->bitmap_callbacks.bitmap_destroy);*/
-	gif->bitmap_callbacks.bitmap_destroy(gif->frame_image);
+	gif->bitmap_callbacks.bitmap_destroy(gif->frame_image); /* SH-04.04.2015: free memory first ??? */
+	/*assert(gif->bitmap_callbacks.bitmap_create);*/
+	if ((buffer = gif->bitmap_callbacks.bitmap_create(max_width, max_height, &gif->bpp, &gif->map)) == NULL)
+		return GIF_INSUFFICIENT_MEMORY;
+	/* SH-04.04.2015: originally bitmap_destroy was here... */
 	gif->frame_image = buffer;
 	gif->width = max_width;
 	gif->height = max_height;
@@ -594,6 +617,7 @@ static gif_result gif_initialise_frame(gif_animation *gif) {
 	/*	We could theoretically get some junk data that gives us millions of frames, so
 		we ensure that we don't have a silly number
 	*/
+
 	if (frame > 4096) return GIF_FRAME_DATA_ERROR;
 
 	/*	Get some memory to store our pointers in etc.
@@ -649,6 +673,7 @@ static gif_result gif_initialise_frame(gif_animation *gif) {
 
 	/*	If we're not done, there should be an image descriptor
 	*/
+
 	if (gif_data[0] != GIF_IMAGE_SEPARATOR) return GIF_FRAME_DATA_ERROR;
 
 	/*	Do some simple boundary checking
