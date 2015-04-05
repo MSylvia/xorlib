@@ -153,7 +153,8 @@ int xorect(short x, short y, short w, short h, char c); /* draw a rectangular wi
 int xobar(short x, short y, short w, short h, char c);  /* draw a solid rectangular with a color (-1 means inversion) */
 int xocircle(short x, short y, short r, char c);        /* draw a circle with a color (-1 means inversion) */
 int xoellipse(short x, short y, short rx, short ry, char c); /* draw an oval with a color (-1 means inversion) */
-int xoarc(short x, short y, short rx, short ry, short a1, short a2, char c); /* draw a solid piece of oval (-1 means inversion) */
+int xoarc(short x, short y, short rx, short ry, short a1, short a2, char c); /* draw an arc of oval (-1 means inversion) */
+int xopie(short x, short y, short rx, short ry, short a1, short a2, char c); /* draw a solid piece of oval (-1 means inversion) */
 int xofill(short x, short y, char c);                   /* fill a region with a color (inversion is not applicable) */
 int xopoly(short n, short *a);                          /* draw a polygon from array {x,y,c, x,y,c etc. } */
 int xotextattr(char i, char p);                         /* set text color attributes (ink, paper) */
