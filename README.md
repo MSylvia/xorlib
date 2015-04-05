@@ -18,11 +18,11 @@ GIF decoder was taken from NetSurf project (MIT-license):
 
 http://www.netsurf-browser.org/projects/libnsgif/
 
-JPG decoder is a public domain library picojpeg:
+JPG decoder is a public domain library called "picojpeg":
 
 https://code.google.com/p/picojpeg/
 
-Folder "examples" has some public domain apps for this library.
+Folder "examples" has some public domain apps for XORLib.
 
 See http://xorlib.com for more info!
 
