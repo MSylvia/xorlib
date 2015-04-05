@@ -106,8 +106,8 @@ typedef struct gif_animation {
 	gif_frame *frames;				/**< decoded frames */
 	short decoded_frame;				/**< current frame decoded to bitmap */
 	void *frame_image;				/**< currently decoded image; stored as bitmap from bitmap_create callback */
-	int bpp;					/**< SH-04.04.2015: extension to have compact decoded image (bits per pixel:1,4,8,32) */
-	unsigned long* map;				/**< SH-04.04.2015: extension to have compact decoded image (suitable for bpp=1/4/8) */
+	int bpp;					/**< SH-04.04.2015: extension to have compact decoded image (bits per pixel:1,2,4,8,32) */
+	unsigned long* map;				/**< SH-04.04.2015: extension to have compact decoded image (suitable for bpp=1/2/4/8) */
 	short loop_count;				/**< number of times to loop animation */
 	gif_result current_error;			/**< current error type, or 0 for none*/
 	/**	Internal members are listed below
@@ -199,20 +199,21 @@ void gif_finalise(gif_animation *gif);
 /*	EXTENSIONS FOR PIC32
 	====================
 
-	I extended bitmap_create callback with two additional parameters:
-	- pointer to int bpp (bits per pixel) of output video device;
-	- pointer to pointer to unsigned long for optional color map of output device.
+	I extended bitmap_create callback with two additional arguments:
+	3rd - pointer to int bpp (bits per pixel) of output video device;
+	4th - pointer to pointer to unsigned long for optional color map of output device.
 	Purpose of this map is to reduce size of the buffer for embedded applications.
 	Default value of bpp is 32 and in this case behavior is the same as before -
 	no map and buffer has 32-bit integers with full AABBGGRR color info per pixel.
 	If output video device is not supporting full color then user may use smaller
-	numbers for bpp - 8 for byte per pixel, 4 for 2 pixels per byte and 1 for
-	8 pixels per byte. To map colors the program needs to have a color map with
-	256 entries for bpp=8 (buffer is 4 times smaller), 16 entries for bpp=4
-	(buffer is 8 times smaller) and 2 entries for bpp=1 (buffer is 32 times smaller).
-	Mapping colors are happening in moment of reading color tables from GIF file -
-	program simply chooses closest color from provided map for every GIF color and
-	store index in highest bytes of color table entry (instead of alpha).
+	numbers for bpp - 8 for 1 pixel per byte, 4 for 2 pixels per byte, 2 for 4 pixels
+	per byte and 1 for 8 pixels per byte. To map colors the program needs to have
+	a color map with 256 entries for bpp=8 (buffer is 4 times smaller), 16 entries for
+	bpp=4 (buffer is 8 times smaller), 4 entries for bpp=2 (buffer is 16 times smaller)
+	and 2 entries for bpp=1 (buffer is 32 times smaller). Mapping colors are happening
+	in moment of reading color tables from GIF file - program simply chooses closest
+	color from provided map for every GIF color and stores index in highest bytes of
+	color table entry (instead of alpha value).
 	
 	Shaos, Sat 4th April 2015
 */
