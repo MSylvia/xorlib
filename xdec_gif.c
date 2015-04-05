@@ -7,8 +7,8 @@
  * - changed some types in structures
  * - color tables are static now (no memory allocation for it)
  * - reallocate frame data by bigger portions (2x bigger than previously allocated)
- * - made big-endian friendly
- * - added support for 1-bit, 4-bit and 8-bit buffers (with color maps)
+ * - made code big-endian friendly
+ * - added support for 1-bit, 2-bit, 4-bit and 8-bit buffers (with color maps)
  *
  * See original copyrights below:
  *
@@ -196,8 +196,8 @@ void gif_finalise(gif_animation *gif);
 	interest in doing so.
 */
 
-/*	EXTENSIONS FOR PIC32
-	====================
+/*	EXTENSIONS FOR EMBEDDED
+	=======================
 
 	I extended bitmap_create callback with two additional arguments:
 	3rd - pointer to int bpp (bits per pixel) of output video device;
