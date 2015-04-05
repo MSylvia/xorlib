@@ -156,10 +156,10 @@ int xoellipse(short x, short y, short rx, short ry, char c); /* draw an oval wit
 int xoarc(short x, short y, short rx, short ry, short a1, short a2, char c); /* draw an arc of oval (-1 means inversion) */
 int xopie(short x, short y, short rx, short ry, short a1, short a2, char c); /* draw a solid piece of oval (-1 means inversion) */
 int xofill(short x, short y, char c);                   /* fill a region with a color (inversion is not applicable) */
-int xopoly(short n, short *a);                          /* draw a polygon from array {x,y,c, x,y,c etc. } */
+int xopoly(char c, short n, short *a);                  /* draw a polygon from array {x,y, x,y, etc. } */
 int xotextattr(char i, char p);                         /* set text color attributes (ink, paper) */
 int xochar(unsigned char x, unsigned char y, char c);   /* print character using text location */
-int xostring(unsigned char x, unsigned char y, char* s); /* print string using text location */
+int xostring(unsigned char x, unsigned char y, char* s);/* print string using text location */
 int xoprintf(char* s, ...);                             /* print string to current position with a possible scroll */
 int xouserchar(char c, unsigned char* p);               /* add user character with code 0...31 using 8 bytes -> 0 if error */
 unsigned char xotextwidth(void);                        /* return text screen width */

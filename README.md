@@ -1,30 +1,10 @@
 # XORLib - old school game library
 
-Library licensed under MIT-license (see LICENSE).
+XORLib is a simple multiplatform game library that is licensed under
+MIT-license and developed at least for two platforms:
 
-Copyright (c) 2015 A.A.Shabarshin <me@shaos.net>
-
-PIC32 original code:
-
-Copyright (c) 2014 Bruce Land (Cornell University)
-
-GIF decoder (libnsgif):
-
-Copyright (c) 2004 Richard Wilson <richard.wilson@netsurf-browser.org>
-
-Copyright (c) 2008 Sean Fox <dyntryx@gmail.com>
-
-JPG decoder (picojpeg):
-
-Public domain from Rich Geldreich <richgel99@gmail.com>
-
-# About
-
-XORLib is simple multiplatform game library. Current ports:
 - PIC32 with NTSC and PAL TV
 - DOS with CGA/EGA/VGA
-
-Folder "examples" has some public domain test programs for this library.
 
 PIC32 code based on "NTSC TV interface" examples from
 http://hackaday.io/project/2032-pic32-oscilloscope
@@ -33,6 +13,16 @@ by Bruce Land (Cornell University) that is based on some ideas from
 by Lucio Di Jasio.
 
 DOS code doesn't exist yet...
+
+GIF decoder was taken from NetSurf project (MIT-license):
+
+http://www.netsurf-browser.org/projects/libnsgif/
+
+JPG decoder is a public domain library picojpeg:
+
+https://code.google.com/p/picojpeg/
+
+Folder "examples" has some public domain apps for this library.
 
 See http://xorlib.com for more info!
 
