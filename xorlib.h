@@ -25,28 +25,29 @@ See for more info: http://www.xorlib.com
    DECODEJPG - compiled with JPG decoder (xdec_jpg.c)
 */
 
-/* NTSC compatible modes - 256 bits per line (original) */
+/* NTSC compatible video modes - 256 bits per line (original) */
 #define XOMODE_256x200_MONO    0 /* Black and white 256x200 */
-#define XOMODE_128x100_GRAY5   1 /* Pseudo mode over 256x200 with 5 shades of gray */
-/* NTSC compatible modes - 320 bits per line */
+#define XOMODE_128x100_GRAY5   1 /* Pseudo mode above mode 0 with 5 shades of gray */
+/* NTSC compatible video modes - 320 bits per line */
 #define XOMODE_320x200_MONO    2 /* Black and white 320x200 */
-#define XOMODE_160x100_GRAY5   3 /* Pseudo mode over 320x200 with 5 shades of gray */
-/* NTSC compatible modes - 640 bits per line */
+#define XOMODE_160x100_GRAY5   3 /* Pseudo mode above mode 2 with 5 shades of gray */
+/* NTSC compatible video modes - 640 bits per line */
 #define XOMODE_640x200_MONO    4 /* Black and white 640x200 */
-#define XOMODE_320x200_COL15   5 /* Pseudo mode over 640x200 with 15 colors mapped to EGA colors */
-#define XOMODE_320x200_COL4    6 /* CGA-like mode (black/cyan/magenta/white) */
-#define XOMODE_320x200_GRAY4   7 /* Grayscale mode with 4 shades of gray */
-/* NTSC compatible modes - 1280 bits per line (extended hardware required) */
-#define XOMODE_320x200_COL16   8 /* EGA-like mode with standard 16-color palette */
-#define XOMODE_320x200_GRAY16  9 /* Grayscale mode with 16 shades of gray */
-#define XOMODE_160x200_COL256 10 /* Predefined 256-color RGB-palette */
-/* NTSC compatible modes - 2560 bits per line (future hardware) */
-#define XOMODE_640x200_COL16  11 /* EGA-like mode with standard 16-color palette */
-#define XOMODE_320x200_COL256 12 /* Predefined 256-color RGB-palette */
-/* VGA compatible modes - 2560 bits per line with more lines (just a placeholder for future) */
+#define XOMODE_320x100_GRAY5   5 /* Pseudo mode above mode 4 with 5 shades of gray */
+#define XOMODE_160x100_COL256  6 /* Color burst mode over 640x200 with 256 predefined colors */
+#define XOMODE_160x100_COL16   7 /* Pseudo mode above mode 6 with standard 16 colors */
+/* NTSC compatible video modes with additional hardware - 640 bits per line */
+#define XOMODE_320x200_COL4    8 /* CGA-like mode with configurable 4-color palette */
+/* NTSC compatible video modes with additional hardware - 1280 bits per line */
+#define XOMODE_320x200_COL16   9 /* EGA-like mode with configurable 16-color palette */
+#define XOMODE_160x200_COL256 10 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
+/* NTSC compatible video modes with additional hardware - 2560 bits per line */
+#define XOMODE_640x200_COL16  11 /* EGA-like mode with configurable 16-color palette */
+#define XOMODE_320x200_COL256 12 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
+/* VGA compatible video modes (just a placeholder for future) */
 #define XOMODE_640x350_COL16  13 /* EGA-like mode with standard 16-color palette */
 #define XOMODE_640x480_COL16  14 /* VGA-like mode with standard 16-color palette */
-#define XOMODE_800x600_COL16  15 /* VGA-like mode with standard 16-color palette */
+#define XOMODE_800x600_COL16  15 /* SVGA-like mode with standard 16-color palette */
 
 /* Standard colors */
 #define XOCOLOR_BLACK           0
