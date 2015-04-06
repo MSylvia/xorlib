@@ -10,6 +10,9 @@
  * - made code big-endian friendly
  * - added support for 1-bit, 2-bit, 4-bit and 8-bit buffers (with color maps)
  *
+ * ToDo:
+ * - for now width must fit into longs even for smaller bpps...
+ *
  * See original copyrights below:
  *
  * Copyright 2004 Richard Wilson <richard.wilson@netsurf-browser.org>
@@ -49,7 +52,8 @@ typedef enum {
 	GIF_DATA_ERROR = -4,
 	GIF_INSUFFICIENT_MEMORY = -5,
 	GIF_FRAME_NO_DISPLAY = -6,
-	GIF_END_OF_FRAME = -7
+	GIF_END_OF_FRAME = -7,
+	GIF_INVALID_BPP = -8 /* SH-05.04.2015 */
 } gif_result;
 
 /*	The GIF frame data
@@ -236,7 +240,7 @@ void gif_finalise(gif_animation *gif);
 
 /* Transparent colour
 */
-#define GIF_TRANSPARENT_COLOUR 0x00
+#define GIF_TRANSPARENT_COLOUR 0x00000000
 
 /*	GIF Flags
 */
@@ -265,8 +269,8 @@ static gif_result gif_initialise_frame(gif_animation *gif);
 static gif_result gif_initialise_frame_extensions(gif_animation *gif, const int frame);
 static gif_result gif_skip_frame_extensions(gif_animation *gif);
 static unsigned int gif_interlaced_line(int height, int y);
-
-
+/* SH-05.04.2015 */
+static unsigned long gif_choosecolor(int mapsz, unsigned long* map, unsigned long color);
 
 /*	Internal LZW routines
 */
@@ -461,6 +465,12 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
+		/* SH-05.04.2015 */
+		if((gif->bpp!=32 && gif->map==NULL) ||
+		   (gif->bpp!=32 && gif->bpp!=8 && gif->bpp!=4 && gif->bpp!=2 && gif->bpp!=1))
+		{
+			return GIF_INVALID_BPP;
+		}
 
 		/*	Remember we've done this now
 		*/
@@ -494,9 +504,12 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 				entry[3] = 0xff;	/* a */
 #else
 /* SH-04.04.2015: big-endian friendly code: */
-				gif->global_colour_table[index] = 0xFF000000 |
-					(gif_data[2]<<16) | (gif_data[1]<<8) | gif_data[0];
+				gif->global_colour_table[index] = 0xFF000000 | (gif_data[2]<<16) | (gif_data[1]<<8) | gif_data[0];
 #endif
+				/* SH-05.04.2015: choose closest color index and store it in highest byte */
+				if(gif->bpp < 32)
+					gif->global_colour_table[index] =
+						gif_choosecolor(1<<gif->bpp,gif->map,gif->global_colour_table[index]);
 				gif_data += 3;
 			}
 			gif->buffer_position = (gif_data - gif->gif_data);
@@ -506,8 +519,15 @@ gif_result gif_initialise(gif_animation *gif, size_t size, unsigned char *data) 
 			unsigned long *entry = gif->global_colour_table;
 
 			entry[0] = 0xFF000000;
-			/* Force Alpha channel to opaque TODO: big-endian? */
+			/* Force Alpha channel to opaque */
 			entry[1] = 0xFFFFFFFF;
+
+			/* SH-05.04.2015: choose closest color index and store it in highest byte */
+			if(gif->bpp < 32)
+			{
+				entry[0] = gif_choosecolor(1<<gif->bpp,gif->map,entry[0]);
+				entry[1] = gif_choosecolor(1<<gif->bpp,gif->map,entry[1]);
+			}
 		}
 	}
 
@@ -562,6 +582,12 @@ static gif_result gif_initialise_sprite(gif_animation *gif, unsigned int width, 
 	/*assert(gif->bitmap_callbacks.bitmap_create);*/
 	if ((buffer = gif->bitmap_callbacks.bitmap_create(max_width, max_height, &gif->bpp, &gif->map)) == NULL)
 		return GIF_INSUFFICIENT_MEMORY;
+	/* SH-05.04.2015 */
+	if((gif->bpp!=32 && gif->map==NULL) ||
+	   (gif->bpp!=32 && gif->bpp!=8 && gif->bpp!=4 && gif->bpp!=2 && gif->bpp!=1))
+	{
+		return GIF_INVALID_BPP;
+	}
 	/* SH-04.04.2015: originally bitmap_destroy was here... */
 	gif->frame_image = buffer;
 	gif->width = max_width;
@@ -927,7 +953,9 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 	unsigned int return_value = 0;
 	unsigned int x, y, decode_y, burst_bytes;
 	int last_undisposed_frame = (frame - 1);
-	register unsigned char colour;
+	unsigned char colour;
+	unsigned long tmpul,tmpul2; /* SH-05.04.2015 */
+	int tmpi,offset_scanline=0; /* SH-05.04.2015 */
 
 	/*	Ensure this frame is supposed to be decoded
 	*/
@@ -1042,9 +1070,12 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 				entry[3] = 0xff;	/* a */
 #else
 /* SH-04.04.2015: big-endian friendly code: */
-				colour_table[index] = 0xFF000000 |
-					(gif_data[2]<<16) | (gif_data[1]<<8) | gif_data[0];
+				colour_table[index] = 0xFF000000 | (gif_data[2]<<16) | (gif_data[1]<<8) | gif_data[0];
 #endif
+				/* SH-05.04.2015: choose closest color index and store it in highest byte */
+				if(gif->bpp < 32)
+					colour_table[index] =
+						gif_choosecolor(1<<gif->bpp,gif->map,colour_table[index]);
 				gif_data += 3;
 			}
 		} else {
@@ -1091,7 +1122,11 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 		 *	colour or this is the first frame, clear the frame data
 		*/
 		if ((frame == 0) || (gif->decoded_frame == GIF_INVALID_FRAME)) {
-			memset((char*)frame_data, GIF_TRANSPARENT_COLOUR, gif->width * gif->height * sizeof(int));
+			if(gif->bpp < 32) {
+				memset((char*)frame_data, 0x00, (gif->width * gif->height * gif->bpp) >> 3);
+			} else {
+				memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(long));
+			}
 			gif->decoded_frame = frame;
 			/* The line below would fill the image with its background color, but because GIFs support
 			 * transparency we likely wouldn't want to do that. */
@@ -1112,7 +1147,11 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 			 */
 			if (last_undisposed_frame == -1) {
 				/* see notes above on transparency vs. background color */
-				memset((char*)frame_data, GIF_TRANSPARENT_COLOUR, gif->width * gif->height * sizeof(int));
+				if(gif->bpp < 32) {
+					memset((char*)frame_data, 0x00, (gif->width * gif->height * gif->bpp) >> 3);
+				} else {
+					memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(long));
+				}
 			} else {
 				if ((return_value = gif_decode_frame(gif, last_undisposed_frame)) != GIF_OK)
 					goto gif_decode_frame_exit;
@@ -1151,8 +1190,19 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 				decode_y = gif_interlaced_line(height, y) + offset_y;
 			else
 				decode_y = y + offset_y;
+			if(gif->bpp < 32)
+			{
+			frame_scanline = frame_data + (((offset_x + decode_y * gif->width) * gif->bpp)>>5);
+			switch(gif->bpp)
+			{
+				case 1: offset_scanline = (offset_x & 31);    break;
+				case 2: offset_scanline = (offset_x & 15)<<1; break;
+				case 4: offset_scanline = (offset_x &  7)<<2; break;
+				case 8: offset_scanline = (offset_x &  3)<<3; break;
+			}
+			} else {
 			frame_scanline = frame_data + offset_x + (decode_y * gif->width);
-
+			}
 			/*	Rather than decoding pixel by pixel, we try to burst out streams
 				of data to remove the need for end-of data checks every pixel.
 			*/
@@ -1168,8 +1218,48 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 						if (((gif->frames[frame].transparency) &&
 							(colour != gif->frames[frame].transparency_index)) ||
 							(!gif->frames[frame].transparency))
-								*frame_scanline = colour_table[colour];
-						frame_scanline++;
+						{
+							switch(gif->bpp)
+							{
+							case 1:
+							if(colour_table[colour]&0xFF000000)
+								*frame_scanline |= ((colour_table[colour]<<7)&0x80000000)>>offset_scanline;
+							else
+								*frame_scanline &= ~(((colour_table[colour]<<7)&0x80000000)>>offset_scanline);
+							break;
+							
+							case 2:
+							tmpul = 0xC0000000;
+							*frame_scanline &= ~(tmpul>>offset_scanline);
+							*frame_scanline |= ((colour_table[colour]<<6)&0xC0000000)>>offset_scanline;
+							break;
+							
+							case 4:
+							tmpul = 0xF0000000;
+							*frame_scanline &= ~(tmpul>>offset_scanline);
+							*frame_scanline |= ((colour_table[colour]<<4)&0xF0000000)>>offset_scanline;
+							break;
+							
+							case 8:
+							tmpul = 0xFF000000;
+							*frame_scanline &= ~(tmpul>>offset_scanline);
+							*frame_scanline |= (colour_table[colour]&0xFF000000)>>offset_scanline;
+							break;
+							
+							default: *frame_scanline = colour_table[colour]; break;
+							}
+						}
+						/* move one pixel right */
+						if(gif->bpp < 32)
+						{
+							offset_scanline += gif->bpp;
+							if(offset_scanline >= 32)
+							{
+								frame_scanline++;
+								offset_scanline=0;
+							}
+						}
+						else frame_scanline++;
 					}
 				} else {
 					if (!gif_next_LZW(gif)) {
@@ -1189,11 +1279,68 @@ gif_result gif_decode_frame(gif_animation *gif, unsigned int frame) {
 		*/
 		if (gif->frames[frame].disposal_method == GIF_FRAME_CLEAR) {
 			for (y = 0; y < height; y++) {
+				if(gif->bpp < 32)
+				{
+				frame_scanline = frame_data + (((offset_x + (y + offset_y) * gif->width) * gif->bpp)>>5);
+				switch(gif->bpp)
+				{
+				case 1: offset_scanline = (offset_x & 31);    tmpul2=(colour_table[gif->background_index]<<7)&0x80000000; break;
+				case 2: offset_scanline = (offset_x & 15)<<1; tmpul2=(colour_table[gif->background_index]<<6)&0xC0000000; break;
+				case 4: offset_scanline = (offset_x &  7)<<2; tmpul2=(colour_table[gif->background_index]<<4)&0xF0000000; break;
+				case 8: offset_scanline = (offset_x &  3)<<3; tmpul2=colour_table[gif->background_index]&0xFF000000; break;
+				}
+				if (gif->frames[frame].transparency) tmpul2 = 0;
+				for(tmpi=0;tmpi<width;tmpi++)
+				{
+					switch(gif->bpp)
+					{
+					case 1:
+						if(tmpul2)
+							*frame_scanline |= tmpul2>>offset_scanline;
+						else
+							*frame_scanline &= ~(tmpul2>>offset_scanline);
+						break;
+						
+					case 2:
+						tmpul = 0xC0000000;
+						*frame_scanline &= ~(tmpul>>offset_scanline);
+						*frame_scanline |= tmpul2>>offset_scanline;
+						break;
+						
+					case 4:
+						tmpul = 0xF0000000;
+						*frame_scanline &= ~(tmpul>>offset_scanline);
+						*frame_scanline |= tmpul2>>offset_scanline;
+						break;
+						
+					case 8:
+						tmpul = 0xFF000000;
+						*frame_scanline &= ~(tmpul>>offset_scanline);
+						*frame_scanline |= tmpul2>>offset_scanline;
+						break;
+					}
+					offset_scanline += gif->bpp;
+					if(offset_scanline >= 32)
+					{
+						frame_scanline++;
+						offset_scanline=0;
+					}
+				}
+				} else {
 				frame_scanline = frame_data + offset_x + ((offset_y + y) * gif->width);
+#if 0
+/* SH-05.04.2015: is it a bug here where 32-bit colors are copied as bytes?... */
 				if (gif->frames[frame].transparency)
 					memset(frame_scanline, GIF_TRANSPARENT_COLOUR, width * 4);
 				else
 					memset(frame_scanline, colour_table[gif->background_index], width * 4);
+#else
+/* SH-05.04.2015 */
+				if (gif->frames[frame].transparency) tmpul = GIF_TRANSPARENT_COLOUR;
+				else tmpul = colour_table[gif->background_index];
+				for(tmpi=0; tmpi < width; tmpi++) frame_scanline[tmpi] = tmpul;
+#endif
+				}
 			}
 		}
 	}
@@ -1459,6 +1606,37 @@ static int gif_next_code(gif_animation *gif, int code_size) {
 	return ret;
 }
 
+static unsigned long gif_choosecolor(int mapsz, unsigned long* map, unsigned long color)
+{
+ int i,j = -1;
+ int f,e = 30000;
+ long a,r,g,b;
+ r = color & 0x000000FF;
+ g = color & 0x0000FF00;
+ b = color & 0x00FF0000;
+ for(i=0;i<mapsz;i++)
+ {
+   f = 0; /* current error */
+   a = map[i] & 0x000000FF;
+   if(a < r) f+=r-a;
+   else f+=a-r;
+   a = map[i] & 0x0000FF00;
+   if(a < g) f+=(g-a)>>8;
+   else f+=(a-g)>>8;
+   a = map[i] & 0x00FF0000;
+   if(a < b) f+=(b-a)>>16;
+   else f+=(a-b)>>16;
+   if(f < e) /* found next possible close color */
+   {
+      e = f;
+      j = i;
+   }
+ }
+ printf(">>> gif_choosecolor mapsz=%i color=#%8.8X closest=%i error=%i\n",mapsz,color,j,e);
+ if(j >= 0) color = (color & 0x00FFFFFF) | (j<<24);
+ return color;
+}
+
 /*<><><><><><><><><><><><><><> XORLib interface <><><><><><><><><><><><><><>*/
 
 #undef malloc
@@ -1484,3 +1662,21 @@ void my_free(void* p)
   printf(">>> free 0x%8.8X\n",p);
   free(p);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
