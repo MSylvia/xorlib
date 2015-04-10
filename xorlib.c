@@ -167,7 +167,7 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
         // source & destination size, number of bytes per event
         // 32 bytes / line with 4 bytes per transfer (SPI in 32 bit mode)
         //screen_ptr = screen_buffer + ((xorlib_curline - image_start)<<5) ;
-        DmaChnSetTxfer(1, (void*)xorlib_screen_ptr, (void*)&SPI1BUF, 92, 4, 4); 
+        DmaChnSetTxfer(1, (void*)xorlib_screen_ptr, (void*)&SPI1BUF, PITCH<<2, 4, 4); 
         // IRO 17 is the output compare 3 interrupt (See datasheet table 7.1)
         DmaChnSetEventControl(1, DMA_EV_START_IRQ(17)); //
         // turn it on for 32 bytes
@@ -223,6 +223,8 @@ void xoexit(void)
 
 int xoinit(short m)
 {
+  int o = 0;  
+    
 #ifdef TERM
   atexit(xoexit);
   initscr();
@@ -234,6 +236,10 @@ int xoinit(short m)
 
 #ifdef PIC32ANY
 
+  if(m<2) o=6;
+  else if(m<4) o=4;
+  else o=2;
+  
    // Configure the device for maximum performance but do not change the PBDIV
    // Given the options, this function will change the flash wait states, RAM
    // wait state and enable prefetch cache but will not change the PBDIV.
@@ -299,7 +305,7 @@ int xoinit(short m)
     mPORTBClearBits(BIT_3);
 
     // divide Fpb by N, configure the I/O ports. 32 bit transfer
-    SpiChnOpen(SPI_CHANNEL1, SPI_OPEN_ON | SPI_OPEN_MODE32 | SPI_OPEN_MSTEN , 2); // N=6
+    SpiChnOpen(SPI_CHANNEL1, SPI_OPEN_ON | SPI_OPEN_MODE32 | SPI_OPEN_MSTEN , o);
 
     //=== DMA Channel 1 ================================
     // Open DMA Chan1 and chain from channel zero
@@ -315,6 +321,7 @@ int xoinit(short m)
   xorlib_debug = fopen("xorlib.out","wt");
   if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xofist\n");
 #endif
+  return o;
 }
 
 unsigned long xoconfig(void)
