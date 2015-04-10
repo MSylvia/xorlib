@@ -1,0 +1,19 @@
+GIMP Palette
+Name: Xorya
+#
+4   4   12   #04040C H=... S=67  V=5   0000  [0] Black
+1   19  159  #01139F H=233 S=99  V=62  0001  [1] Blue
+70  2   172  #4602AC H=264 S=99  V=67  0010  [5] Magenta
+1   86  255  #0156FF H=220 S=100 V=100 0011  [9] Bright Blue
+102 15  15   #660F0F H=0   S=85  V=40  0100  [4] Red
+122 133 137  #7A8589 H=... S=11  V=54  0101  [7] White (Light Gray)
+249 49  131  #F93183 H=335 S=80  V=98  0110 [12] Bright Red
+219 118 254  #DB76FE H=285 S=54  V=100 0111 [13] Bright Magenta
+0   99  34   #006322 H=141 S=100 V=39  1000  [2] Green
+1   207 133  #01CF85 H=158 S=100 V=81  1001  [3] Cyan
+127 133 125  #7F857D H=... S=6   V=52  1010  [8] Gray
+15  188 253  #0FBCFD H=196 S=94  V=99  1011 [11] Bright Cyan
+138 185 54   #8AB936 H=82  S=71  V=73  1100  [6] Brown (Dark Yellow)
+102 253 90   #66FD5A H=116 S=64  V=99  1101 [10] Bright Green
+253 182 74   #FDB64A H=36  S=71  V=99  1110 [14] Yellow
+220 217 202  #DCD9CA H=... S=8   V=86  1111 [15] Bright White
