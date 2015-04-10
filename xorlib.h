@@ -142,12 +142,15 @@ unsigned long xoconfig(void);                   /* return configuration bits (se
 unsigned long xocontrols(void);                 /* return state of controls (see above) */
 unsigned long xoframes(void);                   /* return frames counter */
 unsigned long xoseconds(void);                  /* return seconds counter */
-short xocurline(void);                          /* return current line of the frame (0 is 1st line of the video) */
+int xocurline(void);                            /* return current line of the frame (0 is 1st line of the video) */
 void xowaitvblank(void);                        /* wait for vertical blank */
 
 /* Graphics functions */
 
 int xoinit(short m);                                    /* set graphics mode -> 0 if failed */
+int xomode(void);                                       /* get graphics mode -> -1 if not yet set */
+int xowidth(void);                                      /* return width of the screen */
+int xoheight(void);                                     /* return height of the screen */
 int xopixel(short x, short y, char c);                  /* draw a pixel (-1 means inversion) -> 0 if invalid args */
 int xoget(short x, short y);                            /* get state of the pixel (actual value) -> -1 if not supported */
 int xoline(short x1, short y1, short x2, short y2, char c); /* draw a line with a color (-1 means inversion) */
@@ -164,11 +167,11 @@ int xochar(unsigned char x, unsigned char y, char c);   /* print character using
 int xostring(unsigned char x, unsigned char y, char* s);/* print string using text location */
 int xoprintf(char* s, ...);                             /* print string to current position with a possible scroll */
 int xouserchar(char c, unsigned char* p);               /* add user character with code 0...31 using 8 bytes -> 0 if error */
-unsigned char xotextwidth(void);                        /* return text screen width */
-unsigned char xotextheight(void);                       /* return text screen height */
-char xogray5(int i);                                    /* 5 shades of gray function (0,1,2,3,4) returns color */
-char xogray5a(int i);                                   /* 5 shades of gray function (0,1,2,3,4) returns ASCII code */
-void xoswitchscreens(void);                             /* switch primary and secondary screens (in case of double buffering) */
+int xotextwidth(void);                                  /* return text screen width */
+int xotextheight(void);                                 /* return text screen height */
+int xogray5(int i);                                     /* 5 shades of gray function (0,1,2,3,4) returns color */
+int xogray5a(int i);                                    /* 5 shades of gray function (0,1,2,3,4) returns ASCII code */
+int xoswitchscreens(void);                              /* switch primary and secondary screens (in case of double buffering) */
 int xouseprimary(void);                                 /* use primary screen (default) */
 int xousesecondary(void);                               /* use secondary screen (in case of double buffering) */
 int* xodirectline(short y);                             /* return pointer to video line for direct access */

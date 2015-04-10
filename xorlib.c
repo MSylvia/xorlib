@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "xorlib.h"
 #ifdef PIC32NTSC
 #define PIC32ANY
+#define TEXT32
 #endif
 #ifdef PIC32NTSCQ
 #define PIC32ANY
@@ -73,14 +74,21 @@ THE SOFTWARE.
 #include <xc.h> // need for pps
 #endif
 
-#define XORLIB_TEMPSTR_SZ 1024
+#define DX xorlib_width
 
-char xorlib_tempstr[XORLIB_TEMPSTR_SZ];
-
+#ifdef TEXT32
+volatile int xorlib_pitch = 8;
+int xorlib_offset = 0;
+int xorlib_width = 256;
+int xorlib_maxcol = 31;
+int xorlib_maxrow = 24;
+#else
+volatile int xorlib_pitch = 20;
+int xorlib_offset = 0;
+int xorlib_width = 640;
 int xorlib_maxcol = 79;
 int xorlib_maxrow = 24;
-int xorlib_curcol = 0;
-int xorlib_currow = 0;
+#endif
 int xorlib_curmode = -1;
 #ifdef PIC32ANY
 volatile unsigned long xorlib_seconds = 0;
@@ -91,14 +99,9 @@ volatile int xorlib_curline = 0;
 
 #ifdef PIC32NTSC
 #define FPS 60
-#define PITCH 8
-#define OFFSET 0
-#define TOFFSET 0
-#define DX 256
 #define DY 200
 // video timing
 #define line_cycles 2032 // 63.5 uSec at 32 MHz Fpb, prescaler=1
-#define line_offset  352 // offset to start video screen
 #define us_5_cycles  160 // 5 uSec at 32 MHz Fpb, prescaler=1
 // CPU configuration
 #define SYS_FREQ 64000000
@@ -108,14 +111,9 @@ volatile int xorlib_curline = 0;
 
 #ifdef PIC32NTSCQ
 #define FPS 60
-#define PITCH 23
-#define OFFSET 96
-#define TOFFSET (OFFSET/8)
-#define DX (OFFSET+640)
 #define DY 200
 // video timing
 #define line_cycles 1823 // 63.5 uSec at 28.6 MHz Fpb (ideally it's 227.5 cycles of subcarrier freq)
-#define line_offset  168 // offset to start video screen (with color burst for color mode)
 #define us_5_cycles  135 // 4.7 uSec at 28.6 MHz Fpb, prescaler=1
 // CPU configuration
 #define SYS_FREQ 57272720
@@ -159,7 +157,7 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
     // update the current scanline number
     xorlib_curline++ ;
 
-//    OpenOC5(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, line_offset+18+sound[xorlib_curline], line_offset+12);
+//    OpenOC5(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, 4+sound[xorlib_curline], 2);
 
     // start the DMA byte blaster to the screen
     if (xorlib_curline >= image_start && xorlib_curline < image_end){
@@ -167,13 +165,13 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
         // source & destination size, number of bytes per event
         // 32 bytes / line with 4 bytes per transfer (SPI in 32 bit mode)
         //screen_ptr = screen_buffer + ((xorlib_curline - image_start)<<5) ;
-        DmaChnSetTxfer(1, (void*)xorlib_screen_ptr, (void*)&SPI1BUF, PITCH<<2, 4, 4); 
+        DmaChnSetTxfer(1, (void*)xorlib_screen_ptr, (void*)&SPI1BUF, xorlib_pitch<<2, 4, 4); 
         // IRO 17 is the output compare 3 interrupt (See datasheet table 7.1)
         DmaChnSetEventControl(1, DMA_EV_START_IRQ(17)); //
         // turn it on for 32 bytes
         DmaChnEnable(1);
         // increment the image memory pointer for the next ISR pass
-        xorlib_screen_ptr += PITCH; // PITCH 32-bit words per line
+        xorlib_screen_ptr += xorlib_pitch; // 32-bit words per line
     }
     // update the frame time_tick immediately after image is copied
     else if(xorlib_curline==image_end)
@@ -223,7 +221,7 @@ void xoexit(void)
 
 int xoinit(short m)
 {
-  int o = 0;  
+  int l,o=0,mo=m;  
     
 #ifdef TERM
   atexit(xoexit);
@@ -232,13 +230,93 @@ int xoinit(short m)
   keypad(stdscr, TRUE);
   noecho();
   nodelay(stdscr, TRUE);
+  o = 1;
 #endif
 
 #ifdef PIC32ANY
 
-  if(m<2) o=6;
-  else if(m<4) o=4;
-  else o=2;
+  memset(xorlib_screen_buffer,0,sizeof(SCREENSZ)*sizeof(int));
+#ifdef PIC32NTSCQ
+  l = 168;
+#endif
+#ifdef PIC32NTSC
+  l = 352;
+#endif
+  switch(m)
+  {
+      case XOMODE_256x200_MONO:
+      case XOMODE_128x100_GRAY5:
+          xorlib_width = 256;
+          xorlib_pitch = 8;
+          xorlib_offset = 0;
+          o = 6;
+#ifdef PIC32NTSCQ
+          o = 4;
+          l += 340;
+#endif
+          break;
+      case XOMODE_320x200_MONO:
+      case XOMODE_160x100_GRAY5:
+          xorlib_width = 320;
+          xorlib_pitch = 10;
+          xorlib_offset = 0;
+          o = 4;
+#ifdef PIC32NTSCQ
+          l += 192;
+#endif
+#ifdef PIC32NTSC
+          l += 136;
+#endif          
+          break;
+      case XOMODE_640x200_MONO:
+      case XOMODE_320x100_GRAY5:
+          xorlib_width = 640;
+          xorlib_pitch = 20;
+          xorlib_offset = 0;
+          o = 2;
+#ifdef PIC32NTSCQ
+          l += 192;
+#endif
+#ifdef PIC32NTSC
+          l += 136;
+#endif          
+          break;
+      case XOMODE_160x200_COL16:
+      case XOMODE_160x100_COL256:
+          xorlib_width = 640;
+#ifdef PIC32NTSCQ
+          xorlib_pitch = 23;
+          xorlib_offset = 3;
+          for(o=0;o<DY;o++)
+          {
+              xorlib_screen_buffer[o*xorlib_pitch+0] = 0x00CCCCCC;
+              xorlib_screen_buffer[o*xorlib_pitch+1] = 0xCCC00000;
+          }
+#endif
+#ifdef PIC32NTSC
+          m = XOMODE_640x200_MONO;
+          xorlib_pitch = 20;
+          xorlib_offset = 0;
+#endif
+          o = 2;
+          break;
+      default:
+#ifdef PIC32NTSC
+          m = XOMODE_256x200_MONO;
+          o = 4;
+          xorlib_pitch = 8;
+#endif          
+#ifdef PIC32NTSCQ
+          m = XOMODE_640x200_MONO;
+          o = 4;
+          l += 192;
+          xorlib_pitch = 20;
+#endif          
+          xorlib_offset = 0;
+  }
+
+  xorlib_maxcol = (xorlib_width>>3)-1;
+  xorlib_curmode = m;
   
    // Configure the device for maximum performance but do not change the PBDIV
    // Given the options, this function will change the flash wait states, RAM
@@ -275,13 +353,13 @@ int xoinit(short m)
     // then use the ISR to change the DMA control to SPI
     // #define OpenOC2( config, value1, value2) ( OC2RS = (value1), OC2R = (value2), OC2CON = (config) )
     // Pulse needs to be TWO cycles long
-    OpenOC3(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, line_offset+2, line_offset);
+    OpenOC3(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, l+2, l);
     // turn on ISR so that DMA can covert to SPI control
     ConfigIntOC3(OC_INT_PRIOR_1 | OC_INT_ON); //3 // 
     mOC3ClearIntFlag(); // and clear the interrupt flag
 
-    // OC4 setup /////////////////////////////////
-    OpenOC4(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, line_offset+0, line_offset+72);
+    // OC4 setup ///////////////////////////////// highlighting of color burst is not required...
+    OpenOC4(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, l+0, l+72);
     // OC4 is PPS group 3, map to RPB13 (pin 24)
     PPSOutput(3, RPB13, OC4);
 
@@ -314,7 +392,9 @@ int xoinit(short m)
     // setup system wide interrupts  ///
     INTEnableSystemMultiVectoredInt();
 
-    memset(xorlib_screen_buffer,0,sizeof(SCREENSZ)*sizeof(int));
+    if(mo==xorlib_curmode)
+         o = 1;
+    else o = 0;
     
 #endif
 #ifdef DEBUG
@@ -345,33 +425,70 @@ unsigned long xocontrols(void)
   return controls;
 }
 
-int* xolinedirect(int y)
+unsigned long xoframes(void)
 {
-   return &xorlib_screen_buffer[PITCH*y+(OFFSET>>5)];
+    return xorlib_frames;
+}
+
+unsigned long xoseconds(void)
+{
+    return xorlib_seconds;
+}
+
+int xocurline(void)
+{
+    return xorlib_curline;
+}
+
+int xomode(void)
+{
+    return xorlib_curmode;
 }
 
 void xowaitvblank(void)
 {
+    unsigned long frame = xorlib_frames;
+    while(xorlib_frames==frame);
 }
 
-int xopixel(short x, short y, char c)
+int* xolinedirect(int y)
 {
-   // calculate i based upon this and x,y
-   // the word with the pixel in it
-   // int i = (x/32) + y*PITCH
-   x += OFFSET;
-   if (c > 0)
-     xorlib_screen_buffer[(x >> 5) + (y * PITCH)] |= 1<<(31-(x & 0x1f));
-   else if (c==0)
-     xorlib_screen_buffer[(x >> 5) + (y * PITCH)] &= ~(1<<(31-(x & 0x1f)));
-   else // c < 0
-     xorlib_screen_buffer[(x >> 5) + (y * PITCH)] ^= 1<<(31-(x & 0x1f));
+#ifdef PIC32ANY
+   return &xorlib_screen_buffer[xorlib_pitch*y + xorlib_offset];
+#endif
+#ifdef DOS32
+   
+#endif
 }
 
-int xoget(short x, short y)
+int* xonextline(int *p)
 {
-    //The following construction detects exactly one bit at the x,y location
-    return (xorlib_screen_buffer[((x+OFFSET) >> 5) + (y * PITCH)] & (1<<(31-(x & 0x1f))))?1:0 ;
+    return p + xorlib_pitch;
+}
+
+int* xoprevline(int *p)
+{
+    return p - xorlib_pitch;
+}
+
+int xowidth(void)
+{
+    return DX;
+}
+
+int xoheight(void)
+{
+    return DY;
+}
+
+int xotextwidth(void)
+{
+    return xorlib_maxcol + 1;
+}
+
+int xotextheight(void)
+{
+    return xorlib_maxrow + 1;
 }
 
 int xochar(unsigned char x, unsigned char y, char c)
@@ -385,19 +502,19 @@ int xochar(unsigned char x, unsigned char y, char c)
      mvaddch(y,x,c);
 #else
 #ifndef NOFONT 
-    x += TOFFSET;
-    int j = (x>>2)+(y<<3)*PITCH;
-    int shf = (3-(x&3))<<3;
-    int msk = ~(255<<shf);
-    unsigned char *ptr = font8x8[c-32];
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*(ptr++)<<shf);j+=PITCH;
-    xorlib_screen_buffer[j]=(xorlib_screen_buffer[j] & msk)|(*ptr<<shf);
+    register int j = x>>2;
+    register int shf = (3-(x&3))<<3;
+    register int msk = ~(255<<shf);
+    register unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
+    int *line_buffer = xolinedirect(y<<3);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(*ptr<<shf);
 #endif
 #endif
   }
@@ -413,29 +530,79 @@ int xochar(unsigned char x, unsigned char y, char c)
   return 1;
 }
 
+/* NOTE: NO PLATFORM SPECIFIC CODE BELOW THIS LINE !!! */
+
+int xogray5(int i)
+{
+    register int c = XOCOLOR_BRIGHT_WHITE;
+    switch(i)
+    {
+        case 0: c=XOCOLOR_BLACK; break;
+        case 1: c=XOCOLOR_GRAY; break;
+        case 2: c=XOCOLOR_BRIGHT_GRAY; break;
+        case 3: c=XOCOLOR_WHITE; break;
+        case 4: c=XOCOLOR_BRIGHT_WHITE; break;
+    }
+    return c;
+}
+
+int xogray5a(int i)
+{
+    register int c = 0xDB;
+    switch(i)
+    {
+        case 0: c=0x20; break;
+        case 1: c=0xB0; break;
+        case 2: c=0xB1; break;
+        case 3: c=0xB2; break;
+        case 4: c=0xDB; break;
+    }
+    return c;
+}
+
+int xopixel(short x, short y, char c)
+{
+   if(x<0 || x>=xowidth()) return 0;
+   if(y<0 || y>=xoheight()) return 0;
+   register int *line_buffer = xolinedirect(y);
+   if (c > 0)
+     line_buffer[x >> 5] |= 1<<(31-(x & 0x1f));
+   else if (c==0)
+     line_buffer[x >> 5] &= ~(1<<(31-(x & 0x1f)));
+   else // c < 0
+     line_buffer[x >> 5] ^= 1<<(31-(x & 0x1f));
+   return 1;
+}
+
+int xoget(short x, short y)
+{
+    //The following construction detects exactly one bit at the x,y location
+    register int* line_buffer = xolinedirect(y);
+    return (line_buffer[(x >> 5) + (y * xorlib_pitch)] & (1<<(31-(x & 0x1f))))?1:0 ;
+}
+
 int xostring(unsigned char x, unsigned char y, char *str)
 {
    register char i;
-   for (i=0; str[i]!=0; i++) {
+   for (i=0; str[i]!=0; i++)
+   {
       xochar(x++,y,str[i]);
    }
    return 1;
 }
+
+#define XORLIB_TEMPSTR_SZ 1024
+
+char xorlib_tempstr[XORLIB_TEMPSTR_SZ];
 
 int xoprintf(char *s,...)
 {
  char *po;
  int n,o = 0;
  va_list arg;
- if(xorlib_curmode < 0)
- {
-#ifdef PIC32NTSC
-     xoinit(XOMODE_256x200_MONO);
-#endif
-#ifdef PIC32NTSCQ
-     xoinit(XOMODE_640x200_MONO);
-#endif
- }
+ static int xorlib_curcol = 0;
+ static int xorlib_currow = 0;
+ if(xomode() < 0) xoinit(-1);
 #ifdef DEBUG
  if(xorlib_debug!=NULL){fputs("xopintf ",xorlib_debug);fputs(s,xorlib_debug);fputc('\n',xorlib_debug);}
 #endif
@@ -453,19 +620,19 @@ int xoprintf(char *s,...)
       if(*po=='\t')
       {
          xorlib_curcol = (xorlib_curcol&0xF8)+8;
-         if(xorlib_curcol > xorlib_maxcol) n++;
+         if(xorlib_curcol > xotextwidth()-1) n++;
       }
    }
    else
    {
       xochar(xorlib_curcol++,xorlib_currow,*po);
-      if(xorlib_curcol > xorlib_maxcol) n++;
+      if(xorlib_curcol > xotextwidth()-1) n++;
    }
    if(n)
    {
       n = 0;
       xorlib_curcol = 0;
-      if(++xorlib_currow > xorlib_maxrow)
+      if(++xorlib_currow > xotextheight()-1)
       {
          // TODO: scroll
          xorlib_currow = xorlib_maxrow;
@@ -550,4 +717,19 @@ int xoline(short x1, short y1, short x2, short y2, char c)
    }
 
    return 1;
+}
+
+int xorect(short x, short y, short w, short h, char c)
+{
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+    xoline(x,y,x2,y,c);
+    xoline(x,y2,x2,y2,c);
+    xoline(x,y,x,y2,c);
+    xoline(x2,y,x2,y2,c);
+    if(xomode()>=4)
+    {
+        xoline(x+1,y,x+1,y2,c);
+        xoline(x2-1,y,x2-1,y2,c);
+    }
 }
