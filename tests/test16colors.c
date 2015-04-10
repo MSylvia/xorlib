@@ -53,25 +53,25 @@ int main()
  int i,j,me,mj;
  double d,c1,c2;
 
- printf("\t");
- for(i=0;i<16;i++) printf("E[%i]\t",i);
+ printf("\n1-color mix:\n\n\t");
+ for(i=0;i<16;i++) printf("X[%i]\t",i);
  printf("\n");
  for(i=0;i<16;i++)
  {
-   printf("X[%i]\t",i,actual[i]);
+   printf("E[%i]\t",i,actual[i]);
    me = 1000;
    mj = -1;
    for(j=0;j<16;j++)
    {
       d = 0;
-      c1 = actual[i]&255;
-      c2 = desirable[j]&255;
+      c1 = actual[j]&255;
+      c2 = desirable[i]&255;
       d += (c1-c2)*(c1-c2);
-      c1 = (actual[i]>>8)&255;
-      c2 = (desirable[j]>>8)&255;
+      c1 = (actual[j]>>8)&255;
+      c2 = (desirable[i]>>8)&255;
       d += (c1-c2)*(c1-c2);
-      c1 = (actual[i]>>16)&255;
-      c2 = (desirable[j]>>16)&255;
+      c1 = (actual[j]>>16)&255;
+      c2 = (desirable[i]>>16)&255;
       d += (c1-c2)*(c1-c2);
       d = sqrt(d);
       printf("%3.2lf\t",d);
@@ -83,6 +83,36 @@ int main()
       }
    }
    printf("[%i]\n",mj);
+ }
+
+ printf("\n2-color mix:\n\n");
+ for(i=0;i<16;i++)
+ {
+   printf("E[%i]\t",i,actual[i]);
+   me = 1000;
+   mj = -1;
+   for(j=0;j<256;j++)
+   {
+      d = 0;
+      c1 = ((actual[j&15]&255)+(actual[j>>4]&255))/2.0;
+      c2 = desirable[i]&255;
+      d += (c1-c2)*(c1-c2);
+      c1 = (((actual[j&15]>>8)&255)+((actual[j>>4]>>8)&255))/2.0;
+      c2 = (desirable[i]>>8)&255;
+      d += (c1-c2)*(c1-c2);
+      c1 = (((actual[j&15]>>16)&255)+((actual[j>>4]>>16)&255))/2.0;
+      c2 = (desirable[i]>>16)&255;
+      d += (c1-c2)*(c1-c2);
+      d = sqrt(d);
+//      printf("%3.2lf\t",d);
+      if(d < me)
+      {
+        me = (int)d;
+        if(d-me >= 0.5) me++;
+        mj = j;
+      }
+   }
+   printf("#%2.2X %c\n",mj,((mj>>4)==(mj&15))?' ':'!');
  }
 
  return 0;
