@@ -20,6 +20,7 @@ See for more info: http://www.xorlib.com
    PIC32VGA - experimental mode for PIC32MX connected to VGA monitor (future)
    DOS32 - for 32-bit DOS
    DOS16 - for 16-bit DOS
+   TERM - emulation of some basic functions through terminal (ncurses)
 
    DECODEGIF - compiled with GIF decoder (xdec_gif.c)
    DECODEJPG - compiled with JPG decoder (xdec_jpg.c)
