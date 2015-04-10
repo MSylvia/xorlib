@@ -219,6 +219,11 @@ void xoexit(void)
 }
 #endif
 
+unsigned long xoconfig(void)
+{
+  return 0;
+}
+
 int xoinit(short m)
 {
   int l,o=0,mo=m;  
@@ -287,11 +292,7 @@ int xoinit(short m)
 #ifdef PIC32NTSCQ
           xorlib_pitch = 23;
           xorlib_offset = 3;
-          for(o=0;o<DY;o++)
-          {
-              xorlib_screen_buffer[o*xorlib_pitch+0] = 0x00CCCCCC;
-              xorlib_screen_buffer[o*xorlib_pitch+1] = 0xCCC00000;
-          }
+          xopalette(0);
 #endif
 #ifdef PIC32NTSC
           m = XOMODE_640x200_MONO;
@@ -404,9 +405,22 @@ int xoinit(short m)
   return o;
 }
 
-unsigned long xoconfig(void)
+int xopalette(short p)
 {
-  return 0;
+    register int y,*b = xorlib_screen_buffer;
+    if(xorlib_pitch!=23) return 0;
+    for(y=0;y<DY;y++)
+    {
+        switch(p)
+        {
+            case 0: b[0]=0x0CCCCCCC; b[1]=0xCC000000; break;
+            case 1: b[0]=0x19999999; b[1]=0x98000000; break;
+            case 2: b[0]=0x33333333; b[1]=0x30000000; break;
+            case 3: b[0]=0x66666666; b[1]=0x60000000; break;
+        }
+        b += xorlib_pitch;
+    }
+    return 1;
 }
 
 unsigned long xocontrols(void)
