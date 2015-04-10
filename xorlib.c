@@ -308,7 +308,7 @@ int xoinit(short m)
 #endif          
 #ifdef PIC32NTSCQ
           m = XOMODE_640x200_MONO;
-          o = 4;
+          o = 2;
           l += 192;
           xorlib_pitch = 20;
 #endif          
