@@ -134,20 +134,12 @@ volatile int *xorlib_screen_ptr;
 // video active lines -- 200 total
 #define image_start 20
 #define image_end (image_start+DY)
-#define top 0
-#define left 0
-#define right 639
-#define bottom 199
-
-#define WAIT 180 // wait 3 seconds before starting video
 
 // == OC3 ISR ============================================
 // VECTOR 14 is OC3 vector -- set up of ipl3 in main
 // vector names from int_1xx_2xx.h
 void __ISR(14, ipl3) OC3Handler(void) // 14
 {
-   if(xorlib_frames > WAIT)
-   {
     // mPORTBSetBits(BIT_1);
     // Convert DMA to SPI control
     DmaChnSetEventControl(1, DMA_EV_START_IRQ(_SPI1_TX_IRQ)); //
@@ -157,7 +149,6 @@ void __ISR(14, ipl3) OC3Handler(void) // 14
     // Table 8.2
     mOC3ClearIntFlag();
     // mPORTBClearBits(BIT_1);  // for profiling the ISR execution time
-   }
 }
 
 
@@ -172,8 +163,6 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
 
     // start the DMA byte blaster to the screen
     if (xorlib_curline >= image_start && xorlib_curline < image_end){
-        if(xorlib_frames > WAIT)
-        {
         // set the Chan1 DMA transfer parameters: source & destination address,
         // source & destination size, number of bytes per event
         // 32 bytes / line with 4 bytes per transfer (SPI in 32 bit mode)
@@ -183,7 +172,6 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
         DmaChnSetEventControl(1, DMA_EV_START_IRQ(17)); //
         // turn it on for 32 bytes
         DmaChnEnable(1);
-        }
         // increment the image memory pointer for the next ISR pass
         xorlib_screen_ptr += PITCH; // PITCH 32-bit words per line
     }
