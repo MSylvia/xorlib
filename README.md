@@ -29,14 +29,17 @@ with XC32 compiler. You need to create empty project for PIC32MX170256B
 (or smaller device if your program will fit) and add header files:
 - xorlib.h
 - nedofont.h
+
 and source files:
 - xorlib.c
 - nedofont.c
 - yourapp.c (with function main - for example hello.c).
-Then you need to add additional option for xc32-gcc (in Project Properties):
--DPIC32NTSCQ (if you have external crystal 14.31818 MHz)
--DPIC32NTSC (if you don't have external crystal 14.31818 MHz and internal
-8 MHz oscillator will be used instead, but color modes will not be available).
+
+Then you need to add additional options for xc32-gcc (in Project Properties):
+- option -DPIC32NTSCQ (if you have external crystal 14.31818 MHz)
+- option -DPIC32NTSC (if you don't have external crystal 14.31818 MHz and
+internal 8 MHz oscillator will be used instead, but color modes will work).
+
 Also it is a good idea to power your device through the same PICkit3 that
 you will use for programming (option "Power" for PICkit3 configuration of
 Project Properties).
