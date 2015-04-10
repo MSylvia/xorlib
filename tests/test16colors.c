@@ -112,7 +112,7 @@ int main()
         mj = j;
       }
    }
-   printf("#%2.2X %c\n",mj,((mj>>4)==(mj&15))?' ':'!');
+   printf("#%2.2X ERR = %i\t%c\n",mj,me,((mj>>4)==(mj&15))?' ':'!');
  }
 
  return 0;
