@@ -34,8 +34,8 @@ See for more info: http://www.xorlib.com
 /* NTSC compatible video modes - 640 bits per line */
 #define XOMODE_640x200_MONO    4 /* Black and white 640x200 */
 #define XOMODE_320x100_GRAY5   5 /* Pseudo mode above mode 4 with 5 shades of gray */
-#define XOMODE_160x100_COL256  6 /* Color burst mode over 640x200 with 256 predefined colors */
-#define XOMODE_160x100_COL16   7 /* Pseudo mode above mode 6 with standard 16 colors */
+#define XOMODE_160x200_COL16   6 /* Color burst mode over 640x200 with 16 predefined colors (4 pallets) */
+#define XOMODE_160x100_COL16   7 /* Pseudo mode above mode 6 with standard 16 colors (approximation) */
 /* NTSC compatible video modes with additional hardware - 640 bits per line */
 #define XOMODE_320x200_COL4    8 /* CGA-like mode with configurable 4-color palette */
 /* NTSC compatible video modes with additional hardware - 1280 bits per line */

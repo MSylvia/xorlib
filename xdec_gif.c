@@ -1632,7 +1632,7 @@ static unsigned long gif_choosecolor(int mapsz, unsigned long* map, unsigned lon
       j = i;
    }
  }
- printf(">>> gif_choosecolor mapsz=%i color=#%8.8X closest=%i error=%i\n",mapsz,color,j,e);
+ printf(">>> gif_choosecolor mapsz=%i color=#%6.6X closest=%i error=%i\n",mapsz,color&0xFFFFFF,j,e);
  if(j >= 0) color = (color & 0x00FFFFFF) | (j<<24);
  return color;
 }

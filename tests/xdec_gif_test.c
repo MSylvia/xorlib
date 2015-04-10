@@ -1,6 +1,4 @@
-/* Modified by A.A.Shabarshin in April 2015
- *
- * decode_gif.c
+/* decode_gif.c - Modified by A.A.Shabarshin in April 2015
  *
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  * Copyright 2008 James Bursa <james@netsurf-browser.org>
@@ -22,6 +20,9 @@
 #include "xdec_gif.c"
 
 #define GIFNAME "shaos.gif"
+
+#define XBMTRICK
+//#define XPMTRICK
 
 //#define TEST32BITS
 //#define TEST8BITS
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
 	size_t size;
 	gif_result code;
 	unsigned long l;
-	unsigned int i,co;
+	unsigned int i,j,co;
 	int width;
 /*
 	if (argc != 2) {
@@ -122,6 +123,9 @@ int main(int argc, char *argv[])
 #ifdef TEST32BITS
 			printf(">> row %u\n",row);
 #endif
+#ifdef XPMTRICK
+			printf("\",\n\"");
+#endif
 			for (col = 0; col != width; col++) {
 				l = image[row*width+col];
 #ifdef TEST32BITS
@@ -131,12 +135,45 @@ int main(int argc, char *argv[])
 					(unsigned char) (l>>16)&255,
 					(unsigned char) (l>>24)&255);
 #else
+#ifdef XBMTRICK
+				unsigned long c = 0;
+				unsigned long n = 1;
+				unsigned long m = 0x80000000;
+				for(j=0;j<32;j++)
+                                {
+                                    if(!(l&n)) c|=m;
+                                    n <<= 1;
+                                    m >>= 1;
+                                }
+//                                printf("0x%8.8X -> 0x%8.8X\n",l,c);
+                                l = c;
+				printf("0x%2.2x, 0x%2.2x, 0x%2.2x, 0x%2.2x, ",
+					(unsigned char) l&255,
+					(unsigned char) (l>>8)&255,
+					(unsigned char) (l>>16)&255,
+					(unsigned char) (l>>24)&255);
+#else
+#ifdef XPMTRICK
+				printf("%1.1X%1.1X%1.1X%1.1X%1.1X%1.1X%1.1X%1.1X",
+					(unsigned char) (l>>28)&15,
+					(unsigned char) (l>>24)&15,
+					(unsigned char) (l>>20)&15,
+					(unsigned char) (l>>16)&15,
+					(unsigned char) (l>>12)&15,
+					(unsigned char) (l>>8)&15,
+					(unsigned char) (l>>4)&15,
+					(unsigned char) l&15);
+#else
 				printf("0x%2.2x, 0x%2.2x, 0x%2.2x, 0x%2.2x, ",
 					(unsigned char) (l>>24)&255,
 					(unsigned char) (l>>16)&255,
 					(unsigned char) (l>>8)&255,
 					(unsigned char) l&255);
+#endif
+#endif
+#ifndef XPMTRICK
 				if(((co++)%3)==2) printf("\n");
+#endif
 #endif
 			}
 		}
@@ -222,28 +259,34 @@ void warning(const char *context, gif_result code)
 }
 
 #define RGB(r,g,b) (r|(g<<8)|(b<<16))
+#define RGBHTML(i) ((i&0xFF0000)>>16)|(i&0xFF00)|((i&0xFF)<<16);
 
 unsigned long map1[2] = { RGB(0,0,0), RGB(255,255,255) };
 
-unsigned long map2[4] = { RGB(0x00,0x00,0x00), RGB(0xFF,0x55,0xFF), RGB(0x55,0xFF,0xFF), RGB(0xFF,0xFF,0xFF) };
+unsigned long map2[4] = {
+ RGB(0x00,0x00,0x00),
+ RGB(0xFF,0x55,0xFF),
+ RGB(0x55,0xFF,0xFF),
+ RGB(0xFF,0xFF,0xFF)
+};
 
 unsigned long map4[16] = {
- RGB(  0,   0,   0), /*  #000000 - 0000 - black (no color) */
- RGB( 32,  92, 160), /*  #205CA0 - 0001 - gray-blue */
- RGB(112,  48, 192), /*  #7030C0 - 0010 - dark purple */
- RGB(104, 112, 228), /*  #6870E4 - 0011 - sky blue */
- RGB(136,  48,  32), /*  #883020 - 0100 - dark brown */
- RGB( 84,  84,  84), /*  #545054 - 0101 - gray (no color) */
- RGB(204,  84, 148), /*  #CC5494 - 0110 - pink */
- RGB(164,  64, 236), /*  #A440EC - 0111 - light purple */
- RGB( 12,  84,  32), /*  #0C5420 - 1000 - dark green */
- RGB( 44, 168, 132), /*  #2CA884 - 1001 - light gray-green */
- RGB( 84,  84,  84), /*  #545054 - 1010 - gray (no color) */
- RGB( 20, 124, 232), /*  #147CE8 - 1011 - light blue */
- RGB(152, 152,  56), /*  #989838 - 1100 - yellow (identical to color burst) */
- RGB( 36, 188,  56), /*  #24BC38 - 1101 - light green */
- RGB(200,  96,  48), /*  #C86030 - 1110 - light brown */
- RGB(160, 152, 176)  /*  #A098B0 - 1111 - white (no color) */
+ RGB(  4,   4,  12),
+ RGB(  1,  19, 159),
+ RGB( 70,   2, 172),
+ RGB(  1,  86, 255),
+ RGB(102,  15,  15),
+ RGB(122, 133, 137),
+ RGB(249,  49, 131),
+ RGB(219, 118, 254),
+ RGB(  0,  99,  34),
+ RGB(  1, 207, 133),
+ RGB(127, 133, 125),
+ RGB( 15, 188, 253),
+ RGB(138, 185,  54),
+ RGB(102, 253,  90),
+ RGB(253, 182,  74),
+ RGB(220, 217, 202),
 };
 
 unsigned long map8[256];
