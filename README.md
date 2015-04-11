@@ -39,7 +39,7 @@ Then you need to add additional options for xc32-gcc (in Project Properties):
 - option -DPIC32NTSCQ (if you have external crystal 14.31818 MHz) will set
 28.63636MHz as peripheral clock and 57.27272MHz as CPU clock.
 - option -DPIC32NTSC (if you don't have external crystal 14.31818 MHz and
-internal 8 MHz oscillator will be used instead will set 32MHz as peripheral
+internal 8 MHz oscillator will be used instead) will set 32MHz as peripheral
 clock and 64MHz as CPU clock (it's faster, but color modes will not
 be available with this option).
 
