@@ -37,15 +37,15 @@ and source files:
 
 Then you need to add additional options for xc32-gcc (in Project Properties):
 - option -DPIC32NTSCQ (if you have external crystal 14.31818 MHz) will set
-28.63636MHz peripheral clock and 57.27272MHz CPU clock.
+28.63636MHz as peripheral clock and 57.27272MHz as CPU clock.
 - option -DPIC32NTSC (if you don't have external crystal 14.31818 MHz and
 internal 8 MHz oscillator will be used instead, but color modes will not
-be available with this option) will set 32MHz peripheral clock and
-64MHz CPU clock.
+be available with this option) will set 32MHz as peripheral clock and
+64MHz as CPU clock.
 
 Also it is a good idea to power your device through the same PICkit3 that
 you will use for programming (option "Power" for PICkit3 configuration of
-Project Properties).
+Project Properties in MPLAB X).
 
 See http://xorlib.com for more info!
 
