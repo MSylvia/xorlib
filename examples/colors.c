@@ -4,11 +4,12 @@
 
 int main()
 {
+
  int y,*p;
 
  xoinit(XOMODE_160x200_COL16);
 
- // 0 - Default composite colors
+ // 0 - Default composite mode colors
  // 1 - Similar to CGA composite mode colors
  // 2 - Similar to Tandy composite mode colors
  // 3 - Similar to PCjr composite mode colors

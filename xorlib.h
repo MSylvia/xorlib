@@ -148,7 +148,7 @@ void xowaitvblank(void);                        /* wait for vertical blank */
 /* Graphics functions */
 
 int xoinit(short m);                                    /* set graphics mode -> 0 if failed */
-int xopalette(short p);                                 /* set predefined palette color mode -> 0 if invalid id */
+int xopalette(short p);                                 /* set predefined palette (for color modes) -> 0 if invalid id */
 int xomode(void);                                       /* get graphics mode -> -1 if not yet set */
 int xowidth(void);                                      /* return width of the screen */
 int xoheight(void);                                     /* return height of the screen */
