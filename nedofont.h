@@ -1,4 +1,4 @@
-/* nedofont.h - Alexander A. Shabarshin <ashabarshin@gmail.com> */
+/* nedofont.h - Alexander A. Shabarshin <me@shaos.net> */
 
 #ifndef _FONT8X8_
 #define _FONT8X8_
