@@ -366,8 +366,8 @@ int xoinit(short m)
 
     // OC5 setup /////////////////////////////////
     OpenOC5(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, line_cycles-200, line_cycles-100);
-    // OC5 is PPS group 3, map to RPA2 (pin 9)
-    PPSOutput(3, RPA2, OC5);
+    // OC5 is PPS group 3, map to RPA4 (pin 12)
+    PPSOutput(3, RPA4, OC5);
     
     // SPI configure /////////////////////////////
     // SCK1 is pin 25 RB14
@@ -375,7 +375,7 @@ int xoinit(short m)
     // SDI1 is PPS group 2, map to RPB8 (pin 17) ???
     // SS1 input is PPS group 1, map to RPB7 (pin 16) for framing
     // specify PPS group, signal, logical pin name
-    PPSInput (1, SS1, RPB7);
+//    PPSInput (1, SS1, RPB7);
     PPSOutput(2, RPA1, SDO1);
     // control sync for DAC
     mPORTBSetPinsDigitalOut(BIT_0|BIT_2|BIT_3);
