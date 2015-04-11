@@ -50,7 +50,7 @@ unsigned long desirable[16] = {
 
 int main()
 {
- int i,j,me,mj;
+ int i,j,me,mj,r,g,b;
  double d,c1,c2;
 
  printf("\n1-color mix:\n\n\t");
@@ -88,19 +88,21 @@ int main()
  printf("\n2-color mix:\n\n");
  for(i=0;i<16;i++)
  {
-   printf("E[%i]\t",i,actual[i]);
    me = 1000;
    mj = -1;
    for(j=0;j<256;j++)
    {
       d = 0;
       c1 = ((actual[j&15]&255)+(actual[j>>4]&255))/2.0;
+      r = c1; if(c1-r>=0.5) r++; if(r>255) r=255;
       c2 = desirable[i]&255;
       d += (c1-c2)*(c1-c2);
       c1 = (((actual[j&15]>>8)&255)+((actual[j>>4]>>8)&255))/2.0;
+      g = c1; if(c1-g>=0.5) g++; if(g>255) g=255;
       c2 = (desirable[i]>>8)&255;
       d += (c1-c2)*(c1-c2);
       c1 = (((actual[j&15]>>16)&255)+((actual[j>>4]>>16)&255))/2.0;
+      b = c1; if(c1-b>=0.5) b++; if(b>255) b=255;
       c2 = (desirable[i]>>16)&255;
       d += (c1-c2)*(c1-c2);
       d = sqrt(d);
@@ -111,8 +113,10 @@ int main()
         if(d-me >= 0.5) me++;
         mj = j;
       }
+      if(i==0) printf("%3d %3d %3d [%i] 0x%2.2X\n",r,g,b,j,j);
+      if(i==0 && j==255) printf("\n");
    }
-   printf("#%2.2X ERR = %i\t%c\n",mj,me,((mj>>4)==(mj&15))?' ':'!');
+   printf("E[%i]\t#%2.2X ERR = %i\t%c\n",i,mj,me,((mj>>4)==(mj&15))?' ':'!');
  }
 
  return 0;
