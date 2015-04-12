@@ -6,6 +6,6 @@
 #define FONT8X8_FIRST 32
 #define FONT8X8_CHARS 224
 
-extern unsigned char font8x8[FONT8X8_CHARS][8];
+extern const unsigned char font8x8[FONT8X8_CHARS][8];
 
 #endif
