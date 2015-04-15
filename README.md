@@ -8,7 +8,7 @@ MIT-license and developed at least for two platforms:
 
 PIC32 code based on "NTSC TV interface" examples from
 http://hackaday.io/project/2032-pic32-oscilloscope
-by Bruce Land (Cornell University) that is based on some ideas from
+by Bruce Land (Cornell University) that is based on examples from
 "Programming 32-bit Microcontrollers in C: Exploring the PIC32"
 by Lucio Di Jasio.
 

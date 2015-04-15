@@ -513,22 +513,22 @@ int xochar(unsigned char x, unsigned char y, char c)
   if(x>=0 && x<=xorlib_maxcol && y>=0 && y<=xorlib_maxrow)
   {
 #ifdef TERM
-     mvaddch(y,x,c);
+    mvaddch(y,x,c);
 #else
 #ifndef NOFONT 
     register int j = x>>2;
     register int shf = (3-(x&3))<<3;
     register int msk = ~(255<<shf);
-    register unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
+    register const unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
     int *line_buffer = xolinedirect(y<<3);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*(ptr++)<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(*ptr<<shf);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[0]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[1]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[2]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[3]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[4]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[5]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[6]<<shf);line_buffer=xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[7]<<shf);
 #endif
 #endif
   }
@@ -547,20 +547,6 @@ int xochar(unsigned char x, unsigned char y, char c)
 /* NOTE: NO PLATFORM SPECIFIC CODE BELOW THIS LINE !!! */
 
 int xogray5(int i)
-{
-    register int c = XOCOLOR_BRIGHT_WHITE;
-    switch(i)
-    {
-        case 0: c=XOCOLOR_BLACK; break;
-        case 1: c=XOCOLOR_GRAY; break;
-        case 2: c=XOCOLOR_BRIGHT_GRAY; break;
-        case 3: c=XOCOLOR_WHITE; break;
-        case 4: c=XOCOLOR_BRIGHT_WHITE; break;
-    }
-    return c;
-}
-
-int xogray5a(int i)
 {
     register int c = 0xDB;
     switch(i)
