@@ -18,7 +18,7 @@ them as a base for your application!
 
 Folder "scrshots" has some screenshots (public domain):
 
-![colors.c](scrshots/colors.jpg?raw=true)
+![](scrshots/colors.jpg?raw=true "colors.c")
 
 ## Acknowledgements
 
