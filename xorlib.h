@@ -1,6 +1,6 @@
 /*
 
-XORLib - old school game library licenced under the MIT License
+XORLib - old school game library licensed under the MIT License
 ===============================================================
 
 See for more info: http://www.xorlib.com
