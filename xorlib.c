@@ -28,7 +28,6 @@ THE SOFTWARE.
 #include "xorlib.h"
 #ifdef PIC32NTSC
 #define PIC32ANY
-#define TEXT32
 #endif
 #ifdef PIC32NTSCQ
 #define PIC32ANY
@@ -76,20 +75,12 @@ THE SOFTWARE.
 
 #define DX xorlib_width
 
-#ifdef TEXT32
-volatile int xorlib_pitch = 8;
-int xorlib_offset = 0;
-int xorlib_width = 256;
-int xorlib_maxcol = 31;
-int xorlib_maxrow = 24;
-#else
-volatile int xorlib_pitch = 20;
+int xorlib_curmode = -1;
 int xorlib_offset = 0;
 int xorlib_width = 640;
 int xorlib_maxcol = 79;
 int xorlib_maxrow = 24;
-#endif
-int xorlib_curmode = -1;
+volatile int xorlib_pitch = 20;
 #ifdef PIC32ANY
 volatile unsigned long xorlib_seconds = 0;
 volatile unsigned long xorlib_frames = 0;
@@ -98,18 +89,23 @@ volatile unsigned long xorlib_frames = 0;
 volatile int xorlib_curline = 0;
 
 #ifdef PIC32NTSC
+
 #define FPS 60
 #define DY 200
 // video timing
-#define line_cycles 2032 // 63.5 uSec at 32 MHz Fpb, prescaler=1
-#define us_5_cycles  160 // 5 uSec at 32 MHz Fpb, prescaler=1
+#define line_cycles 1905 // 63.5 uSec at 30 MHz Fpb, prescaler=1
+#define us_5_cycles  150 // 5 uSec at 30 MHz Fpb, prescaler=1
 // CPU configuration
-#define SYS_FREQ 64000000
-//                      8MHZ                          4MHz               64MHz            32   <-----<---    64MHz
-#pragma config FNOSC = FRCPLL, POSCMOD = OFF, FPLLIDIV = DIV_2, FPLLMUL = MUL_16, FPBDIV = DIV_2, FPLLODIV = DIV_1
+#define SYS_FREQ 60000000
+//                      8MHZ                          4MHz               60MHz            30   <-----<---    60MHz
+#pragma config FNOSC = FRCPLL, POSCMOD = OFF, FPLLIDIV = DIV_2, FPLLMUL = MUL_15, FPBDIV = DIV_2, FPLLODIV = DIV_1
+#pragma config FWDTEN = OFF
+#pragma config FSOSCEN = OFF, JTAGEN = OFF
+
 #endif
 
 #ifdef PIC32NTSCQ
+
 #define FPS 60
 #define DY 200
 // video timing
@@ -119,10 +115,10 @@ volatile int xorlib_curline = 0;
 #define SYS_FREQ 57272720
 //                     14.31818MHZ                      3.579545MHz      57.27272MHz      28.63636  <-----<--- 57.27272MHz
 #pragma config FNOSC = PRIPLL, POSCMOD = HS, FPLLIDIV = DIV_4, FPLLMUL = MUL_16, FPBDIV = DIV_2, FPLLODIV = DIV_1
-#endif
-
 #pragma config FWDTEN = OFF
 #pragma config FSOSCEN = OFF, JTAGEN = OFF
+
+#endif
 
 #define SCREENSZ 4600 // 18400 bytes
 int xorlib_screen_buffer[SCREENSZ];
@@ -241,79 +237,49 @@ int xoinit(short m)
 #ifdef PIC32ANY
 
   memset(xorlib_screen_buffer,0,sizeof(SCREENSZ)*sizeof(int));
-#ifdef PIC32NTSCQ
-  l = 168;
-#endif
+
+/* delay before video */
+  l = 360;
 #ifdef PIC32NTSC
-  l = 352;
+  l += 40;
 #endif
+
   switch(m)
   {
-      case XOMODE_256x200_MONO:
-      case XOMODE_128x100_GRAY5:
-          xorlib_width = 256;
-          xorlib_pitch = 8;
-          xorlib_offset = 0;
-          o = 6;
-#ifdef PIC32NTSCQ
-          o = 4;
-          l += 340;
-#endif
-          break;
+      default: m = XOMODE_320x200_MONO;
+ 
       case XOMODE_320x200_MONO:
       case XOMODE_160x100_GRAY5:
           xorlib_width = 320;
           xorlib_pitch = 10;
           xorlib_offset = 0;
           o = 4;
-#ifdef PIC32NTSCQ
-          l += 192;
-#endif
-#ifdef PIC32NTSC
-          l += 136;
-#endif          
           break;
+
       case XOMODE_640x200_MONO:
       case XOMODE_320x100_GRAY5:
           xorlib_width = 640;
           xorlib_pitch = 20;
           xorlib_offset = 0;
           o = 2;
-#ifdef PIC32NTSCQ
-          l += 192;
-#endif
-#ifdef PIC32NTSC
-          l += 136;
-#endif          
           break;
+
       case XOMODE_160x200_COL16:
       case XOMODE_160x100_COL256:
           xorlib_width = 640;
 #ifdef PIC32NTSCQ
+          l -= 192;
           xorlib_pitch = 23;
           xorlib_offset = 3;
           xopalette(0);
 #endif
 #ifdef PIC32NTSC
-          m = XOMODE_640x200_MONO;
           xorlib_pitch = 20;
           xorlib_offset = 0;
+          m = XOMODE_640x200_MONO;
 #endif
           o = 2;
           break;
-      default:
-#ifdef PIC32NTSC
-          m = XOMODE_256x200_MONO;
-          o = 4;
-          xorlib_pitch = 8;
-#endif          
-#ifdef PIC32NTSCQ
-          m = XOMODE_640x200_MONO;
-          o = 2;
-          l += 192;
-          xorlib_pitch = 20;
-#endif          
-          xorlib_offset = 0;
   }
 
   xorlib_maxcol = (xorlib_width>>3)-1;
@@ -418,6 +384,7 @@ int xopalette(short p)
             case 2: b[0]=0x33333333; b[1]=0x30000000; break;
             case 3: b[0]=0x66666666; b[1]=0x60000000; break;
         }
+        b[2] = 0x00000000;
         b += xorlib_pitch;
     }
     return 1;
@@ -465,24 +432,30 @@ void xowaitvblank(void)
     while(xorlib_frames==frame);
 }
 
+#define Xolinedirect(y) &xorlib_screen_buffer[xorlib_pitch*(y)+xorlib_offset]
+
 int* xolinedirect(int y)
 {
 #ifdef PIC32ANY
-   return &xorlib_screen_buffer[xorlib_pitch*y + xorlib_offset];
+   return Xolinedirect(y);
 #endif
 #ifdef DOS32
    
 #endif
 }
 
+#define Xonextline(p) ((p)+xorlib_pitch)
+
 int* xonextline(int *p)
 {
-    return p + xorlib_pitch;
+    return Xonextline(p);
 }
+
+#define Xoprevline(p) ((p)-xorlib_pitch)
 
 int* xoprevline(int *p)
 {
-    return p - xorlib_pitch;
+    return Xoprevline(p);
 }
 
 int xowidth(void)
@@ -520,14 +493,14 @@ int xochar(unsigned char x, unsigned char y, char c)
     register int shf = (3-(x&3))<<3;
     register int msk = ~(255<<shf);
     register const unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
-    int *line_buffer = xolinedirect(y<<3);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[0]<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[1]<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[2]<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[3]<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[4]<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[5]<<shf);line_buffer=xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[6]<<shf);line_buffer=xonextline(line_buffer);
+    int *line_buffer = Xolinedirect(y<<3);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[0]<<shf);line_buffer=Xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[1]<<shf);line_buffer=Xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[2]<<shf);line_buffer=Xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[3]<<shf);line_buffer=Xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[4]<<shf);line_buffer=Xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[5]<<shf);line_buffer=Xonextline(line_buffer);
+    line_buffer[j]=(line_buffer[j] & msk)|(ptr[6]<<shf);line_buffer=Xonextline(line_buffer);
     line_buffer[j]=(line_buffer[j] & msk)|(ptr[7]<<shf);
 #endif
 #endif
@@ -562,9 +535,9 @@ int xogray5(int i)
 
 int xopixel(short x, short y, char c)
 {
-   if(x<0 || x>=xowidth()) return 0;
-   if(y<0 || y>=xoheight()) return 0;
-   register int *line_buffer = xolinedirect(y);
+   if(x<0||x>=DX) return 0;
+   if(y<0||y>=DY) return 0;
+   register int *line_buffer = Xolinedirect(y);
    if (c > 0)
      line_buffer[x >> 5] |= 1<<(31-(x & 0x1f));
    else if (c==0)
@@ -577,7 +550,7 @@ int xopixel(short x, short y, char c)
 int xoget(short x, short y)
 {
     //The following construction detects exactly one bit at the x,y location
-    register int* line_buffer = xolinedirect(y);
+    register int* line_buffer = Xolinedirect(y);
     return (line_buffer[(x >> 5) + (y * xorlib_pitch)] & (1<<(31-(x & 0x1f))))?1:0 ;
 }
 
@@ -620,19 +593,19 @@ int xoprintf(char *s,...)
       if(*po=='\t')
       {
          xorlib_curcol = (xorlib_curcol&0xF8)+8;
-         if(xorlib_curcol > xotextwidth()-1) n++;
+         if(xorlib_curcol > xorlib_maxcol) n++;
       }
    }
    else
    {
       xochar(xorlib_curcol++,xorlib_currow,*po);
-      if(xorlib_curcol > xotextwidth()-1) n++;
+      if(xorlib_curcol > xorlib_maxrow) n++;
    }
    if(n)
    {
       n = 0;
       xorlib_curcol = 0;
-      if(++xorlib_currow > xotextheight()-1)
+      if(++xorlib_currow > xorlib_maxrow)
       {
          // TODO: scroll
          xorlib_currow = xorlib_maxrow;
@@ -664,12 +637,10 @@ int xoline(short x1, short y1, short x2, short y2, char c)
       dx = x1 - x2;
       s1 = -1;
    }
-
    else if (x2 == x1) {
       dx = 0;
       s1 = 0;
    }
-
    else {
       dx = x2 - x1;
       s1 = 1;
@@ -679,12 +650,10 @@ int xoline(short x1, short y1, short x2, short y2, char c)
       dy = y1 - y2;
       s2 = -1;
    }
-
    else if (y2 == y1) {
       dy = 0;
       s2 = 0;
    }
-
    else {
       dy = y2 - y1;
       s2 = 1;

@@ -14,8 +14,8 @@ See for more info: http://www.xorlib.com
 
 /* Available external macros:
 
-   PIC32NTSC - for PIC32MX with 8 MHz crystal and NTSC timings (black and white modes - better for 256x200)
-   PIC32NTSCQ - for PIC32MX with 14.31818 MHz crystal (color burst mode - better for 320x200 and 640x200)
+   PIC32NTSC - for PIC32MX with 8 MHz crystal and NTSC timings (black and white modes)
+   PIC32NTSCQ - for PIC32MX with 14.31818 MHz crystal (with possible color burst mode)
    PIC32PAL - for PIC32MX with 8 MHz crystal and PAL timings (black and white modes)
    PIC32VGA - experimental mode for PIC32MX connected to VGA monitor (future)
    DOS32 - for 32-bit DOS
@@ -26,31 +26,30 @@ See for more info: http://www.xorlib.com
    DECODEJPG - compiled with JPEG decoder (xdec_jpg.c)
 */
 
-/* NTSC compatible video modes - 256 bits per line (original) */
-#define XOMODE_256x200_MONO    0 /* Black and white 256x200 */
-#define XOMODE_128x100_GRAY5   1 /* Pseudo mode above mode 0 with 5 shades of gray */
 /* NTSC compatible video modes - 320 bits per line */
-#define XOMODE_320x200_MONO    2 /* Black and white 320x200 */
-#define XOMODE_160x100_GRAY5   3 /* Pseudo mode above mode 2 with 5 shades of gray */
+#define XOMODE_320x200_MONO    0 /* Black and white 320x200 */
+#define XOMODE_160x100_GRAY5   1 /* Pseudo mode on top of mode 0 with 5 shades of gray */
 /* NTSC compatible video modes - 640 bits per line */
-#define XOMODE_640x200_MONO    4 /* Black and white 640x200 */
-#define XOMODE_320x100_GRAY5   5 /* Pseudo mode above mode 4 with 5 shades of gray */
-#define XOMODE_160x200_COL16   6 /* Color burst mode over 640x200 with 16 predefined colors (4 pallets) */
-#define XOMODE_160x100_COL256  7 /* Pseudo mode above mode 6 with pallette of approximated colors */
+#define XOMODE_640x200_MONO    2 /* Black and white 640x200 */
+#define XOMODE_320x100_GRAY5   3 /* Pseudo mode on top of mode 2 with 5 shades of gray */
+#define XOMODE_160x200_COL16   4 /* Color burst mode over 640x200 with 16 predefined colors (4 pallets) */
+#define XOMODE_160x100_COL256  5 /* Pseudo mode on top of mode 4 with pallette of approximated colors */
 /* NTSC compatible video modes with additional hardware - 640 bits per line */
-#define XOMODE_320x200_COL4    8 /* CGA-like mode with configurable 4-color palette */
+#define XOMODE_320x200_GRAY16  6 /* Grayscale mode with 16 shades of gray */
+#define XOMODE_320x200_COL4    7 /* CGA-like mode with configurable 4-color palette */
 /* NTSC compatible video modes with additional hardware - 1280 bits per line */
-#define XOMODE_320x200_COL16   9 /* EGA-like mode with configurable 16-color palette */
-#define XOMODE_160x200_COL256 10 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
+#define XOMODE_320x200_COL16   8 /* EGA-like mode with configurable 16-color palette */
+#define XOMODE_160x200_COL256  9 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
 /* NTSC compatible video modes with additional hardware - 2560 bits per line */
-#define XOMODE_640x200_COL16  11 /* EGA-like mode with configurable 16-color palette */
-#define XOMODE_320x200_COL256 12 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
+#define XOMODE_640x200_COL16  10 /* EGA-like mode with configurable 16-color palette */
+#define XOMODE_320x200_COL256 11 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
 /* VGA compatible video modes (just a placeholder for future) */
-#define XOMODE_640x350_COL16  13 /* EGA-like mode with standard 16-color palette */
-#define XOMODE_640x480_COL16  14 /* VGA-like mode with standard 16-color palette */
-#define XOMODE_800x600_COL16  15 /* SVGA-like mode with standard 16-color palette */
+#define XOMODE_640x350_COL16  12 /* EGA-like mode with standard 16-color palette */
+#define XOMODE_640x480_COL16  13 /* VGA-like mode with standard 16-color palette */
+#define XOMODE_800x600_COL16  14 /* SVGA-like mode with standard 16-color palette */
+#define XOMODE_VGA_EXTENDED   15 /* Placeholder for other VGA modes */
 
-/* Standard colors (directly supported only in modes >8 and simulated in mode 7) */
+/* Standard colors (directly supported only in modes >=7 and simulated in mode 5) */
 #define XOCOLOR_BLACK           0
 #define XOCOLOR_BLUE            1
 #define XOCOLOR_GREEN           2
@@ -133,7 +132,6 @@ unsigned long xoframes(void);                   /* return frames counter */
 unsigned long xoseconds(void);                  /* return seconds counter */
 int xocurline(void);                            /* return current line of the frame (0 is 1st line of the video) */
 void xowaitvblank(void);                        /* wait for vertical blank */
-void xowaitnframes(int n);                      /* wait for N frames */
 void xodelay(int ms);                           /* delay in milliseconds */
 int xokeyboard(int *scancode);                  /* return ASCII code from keyboard */
 int xomouse(int *px, int *py);                  /* return mouse state (bit 0 - left button, bit 1 - right button) */
@@ -175,10 +173,10 @@ int xocopy(struct xoimage* d, struct xoimage* s);       /* copy one image into a
 int xorcopy(struct xoimage* d, struct xoimage* s);      /* copy one image into another with xor -> 0 if not supported */
 int xopcopy(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h); /* partial copy without mask */
 int xopcopyk(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h, char c); /* partial copy with a key color */
-int xocopyxbm(struct xoimage* d, unsigned char* s, short x, short y); /* copy image from XBM */
-int xocopymyg(struct xoimage* d, unsigned char* s, int f); /* copy image from MYG frame */
-int xocopygif(struct xoimage* d, unsigned char* s, int f); /* copy image from GIF frame (if GIF decoder is enabled) */
-int xocopyjpg(struct xoimage* d, unsigned char* s);        /* copy image from JPEG (if JPEG decoder is enabled) */
+int xocopyxbm(struct xoimage* d, const unsigned char* s, short x, short y); /* copy image from XBM */
+int xocopymyg(struct xoimage* d, const unsigned char* s, int f); /* copy image from MYG frame */
+int xocopygif(struct xoimage* d, const unsigned char* s, int f); /* copy image from GIF frame (if GIF decoder is enabled) */
+int xocopyjpg(struct xoimage* d, const unsigned char* s);        /* copy image from JPEG (if JPEG decoder is enabled) */
 
 #ifdef __cplusplus
 }
