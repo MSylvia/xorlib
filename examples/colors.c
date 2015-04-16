@@ -9,16 +9,23 @@ int main()
 
  xoinit(XOMODE_160x200_COL16);
 
- // 0 - Default composite mode colors
- // 1 - Similar to CGA composite mode colors
- // 2 - Similar to Tandy composite mode colors
- // 3 - Similar to PCjr composite mode colors
+ /* 
+ 0 - Default composite mode colors
+ 1 - Similar to CGA composite mode colors
+ 2 - Similar to Tandy composite mode colors
+ 3 - Similar to PCjr composite mode colors
+*/
  xopalette(0);
 
  for(y=0;y<200;y++)
  {
    p = xolinedirect(y);
-   p[0] = 0x00000000;
+   if(y<2||y>=198)
+   {   /* white frame */
+       memset(p,0xFF,20*sizeof(int));
+       continue;
+   }
+   p[0] = 0xF0000000;
    p[1] = 0x00111111;
    p[2] = 0x11112222;
    p[3] = 0x22222233;
@@ -39,8 +46,6 @@ int main()
    p[18] = 0xEEEEEEFF;
    p[19] = 0xFFFFFFFF;
  }
-
- xorect(0,0,xowidth(),xoheight(),15);
 
  return 0;
 }

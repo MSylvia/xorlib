@@ -10,10 +10,12 @@ Folder "tools" has some tools licensed under MIT-license.
 
 Folder "tests" has some test programs licensed under MIT-license.
 
-Folder "screenshots" has some screenshots (public domain).
-
 Folder "examples" has some public domain apps for XORLib - you can use
 them as a base for your application!
+
+Folder "scrshots" has some screenshots (public domain):
+
+![](scrshots/colors.jpg?raw=true)
 
 ## Acknowledgements
 
