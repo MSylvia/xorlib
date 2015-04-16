@@ -6,23 +6,36 @@ MIT-license and developed at least for two platforms:
 - PIC32 with NTSC TV, PAL TV and may be VGA
 - DOS with CGA/EGA/VGA
 
+Folder "tools" has some tools licensed under MIT-license.
+
+Folder "tests" has some test programs licensed under MIT-license.
+
+Folder "screenshots" has some screenshots (public domain).
+
+Folder "examples" has some public domain apps for XORLib - you can use
+them as a base for your application!
+
+## Acknowledgements
+
 PIC32 code based on "NTSC TV interface" examples from
 http://hackaday.io/project/2032-pic32-oscilloscope
 by Bruce Land (Cornell University) that is based on examples from
 "Programming 32-bit Microcontrollers in C: Exploring the PIC32"
 by Lucio Di Jasio.
 
-DOS code doesn't exist yet...
-
-GIF decoder was taken from NetSurf project (MIT-license):
+GIF decoder was taken from NetSurf project "libnsgif" (MIT-license):
 
 http://www.netsurf-browser.org/projects/libnsgif/
+
+Authors: Richard Wilson, Sean Fox and James Bursa (decode_gif.c)
 
 JPG decoder is a public domain library called "picojpeg":
 
 https://code.google.com/p/picojpeg/
 
-Folder "examples" has some public domain apps for XORLib.
+Author: Rich Geldreich
+
+## Usage
 
 In order to build PIC32 application you need MPLAB X IDE from Microchip
 with XC32 compiler. You need to create empty project for PIC32MX170256B
