@@ -6,6 +6,9 @@ MIT-license and developed at least for two platforms:
 - PIC32 with NTSC TV, PAL TV and may be VGA
 - DOS with CGA/EGA/VGA
 
+Version 0.x means that library is in active developement and not 100%
+complete! See progress on our [wiki](https://github.com/shaos/xorlib/wiki).
+
 Folder "tools" has some tools licensed under MIT-license.
 
 Folder "tests" has some test programs licensed under MIT-license.
@@ -15,7 +18,7 @@ them as a base for your application!
 
 Folder "scrshots" has some screenshots (public domain):
 
-![](scrshots/colors.jpg?raw=true)
+![colors.c](scrshots/colors.jpg?raw=true)
 
 ## Acknowledgements
 
