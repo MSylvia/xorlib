@@ -35,13 +35,13 @@ See for more info: http://www.xorlib.com
 #define XOMODE_160x200_COL16   4 /* Color burst mode over 640x200 with 16 predefined colors (4 pallets) */
 #define XOMODE_160x100_COL256  5 /* Pseudo mode on top of mode 4 with pallette of approximated colors */
 /* NTSC compatible video modes with additional hardware - 640 bits per line */
-#define XOMODE_320x200_GRAY16  6 /* Grayscale mode with 16 shades of gray */
-#define XOMODE_320x200_COL4    7 /* CGA-like mode with configurable 4-color palette */
+#define XOMODE_320x200_COL4    6 /* CGA-like mode with configurable 4-color palette */
+#define XOMODE_160x200_COL16   7 /* Color mode with standard 16-color palette */
 /* NTSC compatible video modes with additional hardware - 1280 bits per line */
-#define XOMODE_320x200_COL16   8 /* EGA-like mode with configurable 16-color palette */
+#define XOMODE_320x200_COL16   8 /* EGA-like mode with standard 16-color palette */
 #define XOMODE_160x200_COL256  9 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
 /* NTSC compatible video modes with additional hardware - 2560 bits per line */
-#define XOMODE_640x200_COL16  10 /* EGA-like mode with configurable 16-color palette */
+#define XOMODE_640x200_COL16  10 /* EGA-like mode with standard 16-color palette */
 #define XOMODE_320x200_COL256 11 /* Predefined 256-color RGB-palette (including 64 shades of gray) */
 /* VGA compatible video modes (just a placeholder for future) */
 #define XOMODE_640x350_COL16  12 /* EGA-like mode with standard 16-color palette */
