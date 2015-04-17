@@ -7,7 +7,7 @@ int main()
 
  int y,*p;
 
- xoinit(XOMODE_160x200_COL16);
+ xoinit(XOMODE_160x200_COL15); /* gray colors 5 and 10 are identical */
 
  /* 
  0 - Default composite mode colors

@@ -215,14 +215,9 @@ void xoexit(void)
 }
 #endif
 
-unsigned long xoconfig(void)
-{
-  return 0;
-}
-
 int xoinit(short m)
 {
-  int l,o=0,mo=m;  
+  int l,o;  
     
 #ifdef TERM
   atexit(xoexit);
@@ -264,8 +259,8 @@ int xoinit(short m)
           o = 2;
           break;
 
-      case XOMODE_160x200_COL16:
-      case XOMODE_160x100_COL256:
+      case XOMODE_160x200_COL15:
+      case XOMODE_160x100_COL120:
           xorlib_width = 640;
 #ifdef PIC32NTSCQ
           l -= 192;
@@ -358,17 +353,13 @@ int xoinit(short m)
 
     // setup system wide interrupts  ///
     INTEnableSystemMultiVectoredInt();
-
-    if(mo==xorlib_curmode)
-         o = 1;
-    else o = 0;
     
 #endif
 #ifdef DEBUG
   xorlib_debug = fopen("xorlib.out","wt");
   if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xofist\n");
 #endif
-  return o;
+  return m;
 }
 
 int xopalette(short p)
@@ -388,6 +379,28 @@ int xopalette(short p)
         b += xorlib_pitch;
     }
     return 1;
+}
+
+unsigned long xoconfig(void)
+{
+  int ib = 0;
+  union{long l;char c[4];}u;
+  int is = (sizeof(int)==4)?XOCONFIG_32BITINT:0;
+  u.c[0]=1;u.c[1]=2;u.c[2]=3;u.c[3]=4;
+  if(u.l==0x01020304) ib = XOCONFIG_BIGENDIAN;
+  return (1<<XOMODE_320x200_MONO)|
+         (1<<XOMODE_160x100_GRAY5)|
+         (1<<XOMODE_640x200_MONO)|
+         (1<<XOMODE_320x100_GRAY5)|
+#ifdef PIC32NTSCQ
+         (1<<XOMODE_160x200_COL15)|
+         (1<<XOMODE_160x100_COL120)|
+          XOCONFIG_NTSCTV|
+#endif
+#ifdef PIC32NTSC
+          XOCONFIG_NTSCTV|
+#endif
+          is|ib;
 }
 
 unsigned long xocontrols(void)
@@ -599,7 +612,7 @@ int xoprintf(char *s,...)
    else
    {
       xochar(xorlib_curcol++,xorlib_currow,*po);
-      if(xorlib_curcol > xorlib_maxrow) n++;
+      if(xorlib_curcol > xorlib_maxcol) n++;
    }
    if(n)
    {

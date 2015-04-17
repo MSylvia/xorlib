@@ -32,8 +32,8 @@ See for more info: http://www.xorlib.com
 /* NTSC compatible video modes - 640 bits per line */
 #define XOMODE_640x200_MONO    2 /* Black and white 640x200 */
 #define XOMODE_320x100_GRAY5   3 /* Pseudo mode on top of mode 2 with 5 shades of gray */
-#define XOMODE_160x200_COL16   4 /* Color burst mode over 640x200 with 16 predefined colors (4 pallets) */
-#define XOMODE_160x100_COL256  5 /* Pseudo mode on top of mode 4 with pallette of approximated colors */
+#define XOMODE_160x200_COL15   4 /* Color burst mode over 640x200 with 15 unique colors (4 pallets) */
+#define XOMODE_160x100_COL120  5 /* Pseudo mode on top of mode 4 with about 120 unique dithered colors */
 /* NTSC compatible video modes with additional hardware - 640 bits per line */
 #define XOMODE_320x200_COL4    6 /* CGA-like mode with configurable 4-color palette */
 #define XOMODE_160x200_COL16   7 /* Color mode with standard 16-color palette */
@@ -47,7 +47,7 @@ See for more info: http://www.xorlib.com
 #define XOMODE_640x350_COL16  12 /* EGA-like mode with standard 16-color palette */
 #define XOMODE_640x480_COL16  13 /* VGA-like mode with standard 16-color palette */
 #define XOMODE_800x600_COL16  14 /* SVGA-like mode with standard 16-color palette */
-#define XOMODE_VGA_EXTENDED   15 /* Placeholder for other VGA modes */
+#define XOMODE_EXTENDED_VGA   15 /* Placeholder for other VGA modes */
 
 /* Standard colors (directly supported only in modes >=7 and simulated in mode 5) */
 #define XOCOLOR_BLACK           0
