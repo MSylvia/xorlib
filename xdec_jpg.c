@@ -1,5 +1,7 @@
 /* xdec_jpg.c for XORLib by Shaos based on picojpeg (April 2015) */
 
+/* IT IS NOT YET INTEGRATED INTO XORLIB !!! */
+
 //------------------------------------------------------------------------------
 // picojpeg - Public domain, Rich Geldreich <richgel99@gmail.com>
 //------------------------------------------------------------------------------
