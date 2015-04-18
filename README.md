@@ -3,8 +3,8 @@
 XORLib is a simple multiplatform game library that is licensed under
 MIT-license and developed at least for two platforms:
 
-- PIC32 with NTSC TV, PAL TV and may be VGA
-- DOS with CGA/EGA/VGA
+- PIC32 with NTSC TV and may be PAL TV and VGA
+- DOS32 with CGA and partially EGA/VGA
 
 Version 0.x means that library is in active developement right now and
 far from completion, but usable. Check progress on our

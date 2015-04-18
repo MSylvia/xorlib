@@ -43,15 +43,16 @@ THE SOFTWARE.
 #include <stdarg.h>
 #ifdef TERM
 #include <ncurses.h>
-#endif
+#else
 #ifndef NOFONT
 #include "nedofont.h"
 #endif
+#endif
 
 /*******************************************************************
- * PIC32 code was modified by A.A.Shabarshin (March-April 2015) 
+ * PIC32 code was modified by A.A.Shabarshin (March-April 2015)
  * Optimized, recalculated to 14.31818 MHz and added colors...
- * 
+ *
  * Original code was taken from "NTSC TV interface" examples:
  * http://hackaday.io/project/2032-pic32-oscilloscope
  * Bruce Land Cornell University
@@ -73,7 +74,12 @@ THE SOFTWARE.
 #include <xc.h> // need for pps
 #endif
 
+#ifdef TERM
+#define DX 80
+#define DY 25
+#else
 #define DX xorlib_width
+#endif
 
 int xorlib_curmode = -1;
 int xorlib_offset = 0;
@@ -173,7 +179,7 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
     else if(xorlib_curline==image_end)
     {
         // a general puropose time base
-        if((++xorlib_frames % FPS)==0) xorlib_seconds++;       
+        if((++xorlib_frames % FPS)==0) xorlib_seconds++;
     }
     // == SYNC state machine ====
     // begin long (Vertical) synch after line 247
@@ -188,7 +194,7 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
         // reset for the next frame
         xorlib_screen_ptr = xorlib_screen_buffer_addr;
     }
-   
+
     // clear the timer interrupt flag
     mT2ClearIntFlag();
     //mPORTBClearBits(BIT_1);  // for profiling the ISR execution time
@@ -217,8 +223,6 @@ void xoexit(void)
 
 int xoinit(short m)
 {
-  int l,o;  
-    
 #ifdef TERM
   atexit(xoexit);
   initscr();
@@ -226,10 +230,12 @@ int xoinit(short m)
   keypad(stdscr, TRUE);
   noecho();
   nodelay(stdscr, TRUE);
-  o = 1;
+  if(m<0) m = XOMODE_320x200_MONO;
+  xorlib_curmode = m;
 #endif
 
 #ifdef PIC32ANY
+  int l,o;
 
   memset(xorlib_screen_buffer,0,sizeof(SCREENSZ)*sizeof(int));
 
@@ -242,7 +248,7 @@ int xoinit(short m)
   switch(m)
   {
       default: m = XOMODE_320x200_MONO;
- 
+
       case XOMODE_320x200_MONO:
       case XOMODE_160x100_GRAY5:
           xorlib_width = 320;
@@ -279,14 +285,13 @@ int xoinit(short m)
 
   xorlib_maxcol = (xorlib_width>>3)-1;
   xorlib_curmode = m;
-  
+
    // Configure the device for maximum performance but do not change the PBDIV
    // Given the options, this function will change the flash wait states, RAM
    // wait state and enable prefetch cache but will not change the PBDIV.
    // The PBDIV value is already set via the pragma FPBDIV option above..
    SYSTEMConfig(SYS_FREQ, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
 
-   
     //make sure analog is cleared
     //ANSELA =0;
     //ANSELB =0;
@@ -329,7 +334,7 @@ int xoinit(short m)
     OpenOC5(OC_ON | OC_TIMER2_SRC | OC_CONTINUE_PULSE, line_cycles-200, line_cycles-100);
     // OC5 is PPS group 3, map to RPA4 (pin 12)
     PPSOutput(3, RPA4, OC5);
-    
+
     // SPI configure /////////////////////////////
     // SCK1 is pin 25 RB14
     // SDO1 is PPS group 2, map to RPA1 (pin 3)
@@ -353,17 +358,22 @@ int xoinit(short m)
 
     // setup system wide interrupts  ///
     INTEnableSystemMultiVectoredInt();
-    
+
 #endif
 #ifdef DEBUG
   xorlib_debug = fopen("xorlib.out","wt");
-  if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xofist\n");
+  if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xoinit\n");
 #endif
   return m;
 }
 
+/* End of PIC32 code */
+
 int xopalette(short p)
 {
+#ifdef TERM
+    return 0;
+#else
     register int y,*b = xorlib_screen_buffer;
     if(xorlib_pitch!=23) return 0;
     for(y=0;y<DY;y++)
@@ -379,6 +389,7 @@ int xopalette(short p)
         b += xorlib_pitch;
     }
     return 1;
+#endif
 }
 
 unsigned long xoconfig(void)
@@ -390,8 +401,10 @@ unsigned long xoconfig(void)
   if(u.l==0x01020304) ib = XOCONFIG_BIGENDIAN;
   return (1<<XOMODE_320x200_MONO)|
          (1<<XOMODE_160x100_GRAY5)|
+#ifndef TERM
          (1<<XOMODE_640x200_MONO)|
          (1<<XOMODE_320x100_GRAY5)|
+#endif
 #ifdef PIC32NTSCQ
          (1<<XOMODE_160x200_COL15)|
          (1<<XOMODE_160x100_COL120)|
@@ -421,17 +434,29 @@ unsigned long xocontrols(void)
 
 unsigned long xoframes(void)
 {
+#ifdef TERM
+    return 0;
+#else
     return xorlib_frames;
+#endif
 }
 
 unsigned long xoseconds(void)
 {
+#ifdef TERM
+    return 0;
+#else
     return xorlib_seconds;
+#endif
 }
 
 int xocurline(void)
 {
+#ifdef TERM
+    return 0;
+#else
     return xorlib_curline;
+#endif
 }
 
 int xomode(void)
@@ -441,8 +466,10 @@ int xomode(void)
 
 void xowaitvblank(void)
 {
+#ifndef TERM
     unsigned long frame = xorlib_frames;
     while(xorlib_frames==frame);
+#endif
 }
 
 #define Xolinedirect(y) &xorlib_screen_buffer[xorlib_pitch*(y)+xorlib_offset]
@@ -453,7 +480,10 @@ int* xolinedirect(int y)
    return Xolinedirect(y);
 #endif
 #ifdef DOS32
-   
+
+#endif
+#ifdef TERM
+   return NULL; /* text mode doesn't allow direct video memory access */
 #endif
 }
 
@@ -461,14 +491,30 @@ int* xolinedirect(int y)
 
 int* xonextline(int *p)
 {
+#ifdef PIC32ANY
     return Xonextline(p);
+#endif
+#ifdef DOS32
+
+#endif
+#ifdef TERM
+    return NULL
+#endif
 }
 
 #define Xoprevline(p) ((p)-xorlib_pitch)
 
 int* xoprevline(int *p)
 {
+#ifdef PIC32ANY
     return Xoprevline(p);
+#endif
+#ifdef DOS32
+
+#endif
+#ifdef TERM
+    return NULL
+#endif
 }
 
 int xowidth(void)
@@ -501,7 +547,7 @@ int xochar(unsigned char x, unsigned char y, char c)
 #ifdef TERM
     mvaddch(y,x,c);
 #else
-#ifndef NOFONT 
+#ifndef NOFONT
     register int j = x>>2;
     register int shf = (3-(x&3))<<3;
     register int msk = ~(255<<shf);
@@ -550,6 +596,9 @@ int xopixel(short x, short y, char c)
 {
    if(x<0||x>=DX) return 0;
    if(y<0||y>=DY) return 0;
+#ifdef TERM
+   xochar(x,y,(c<10)?('0'+c):('A'+c-10)); /* text mode hack */
+#else
    register int *line_buffer = Xolinedirect(y);
    if (c > 0)
      line_buffer[x >> 5] |= 1<<(31-(x & 0x1f));
@@ -557,14 +606,19 @@ int xopixel(short x, short y, char c)
      line_buffer[x >> 5] &= ~(1<<(31-(x & 0x1f)));
    else // c < 0
      line_buffer[x >> 5] ^= 1<<(31-(x & 0x1f));
+#endif
    return 1;
 }
 
 int xoget(short x, short y)
 {
-    //The following construction detects exactly one bit at the x,y location
+#ifdef TERM
+    return 0;
+#else
+    /* The following construction detects exactly one bit at the x,y location */
     register int* line_buffer = Xolinedirect(y);
     return (line_buffer[(x >> 5) + (y * xorlib_pitch)] & (1<<(31-(x & 0x1f))))?1:0 ;
+#endif
 }
 
 int xostring(unsigned char x, unsigned char y, char *str)
@@ -620,7 +674,7 @@ int xoprintf(char *s,...)
       xorlib_curcol = 0;
       if(++xorlib_currow > xorlib_maxrow)
       {
-         // TODO: scroll
+         /* TODO: scroll */
          xorlib_currow = xorlib_maxrow;
       }
    }
@@ -629,12 +683,13 @@ int xoprintf(char *s,...)
  return o;
 }
 
-//==================================
-//plot a line
-//at x1,y1 to x2,y2 with color 1=white 0=black 2=invert
-//NOTE: this function requires signed chars
-//Code is from David Rodgers,
-//"Procedural Elements of Computer Graphics",1985
+/*
+ plot a line
+ at x1,y1 to x2,y2 with color 1=white 0=black 2=invert
+ NOTE: this function requires signed chars
+ Code is from David Rodgers,
+ "Procedural Elements of Computer Graphics",1985
+*/
 int xoline(short x1, short y1, short x2, short y2, char c)
 {
    int e;
@@ -645,7 +700,7 @@ int xoline(short x1, short y1, short x2, short y2, char c)
    x = x1;
    y = y1;
 
-   //take absolute value
+   /* take absolute value */
    if (x2 < x1) {
       dx = x1 - x2;
       s1 = -1;
@@ -709,7 +764,7 @@ int xorect(short x, short y, short w, short h, char c)
     xoline(x,y2,x2,y2,c);
     xoline(x,y,x,y2,c);
     xoline(x2,y,x2,y2,c);
-    if(xomode()>=4)
+    if(xomode()>=2) /* ??? */
     {
         xoline(x+1,y,x+1,y2,c);
         xoline(x2-1,y,x2-1,y2,c);
