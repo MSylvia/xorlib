@@ -9,7 +9,7 @@ int main()
 
  xoinit(XOMODE_160x200_COL15); /* gray colors 5 and 10 are identical */
 
- /* 
+/*
  0 - Default composite mode colors
  1 - Similar to CGA composite mode colors
  2 - Similar to Tandy composite mode colors
@@ -19,7 +19,7 @@ int main()
 
  for(y=0;y<200;y++)
  {
-   p = xolinedirect(y);
+   p = xodirectline(y);
    if(y<2||y>=198)
    {   /* white frame */
        memset(p,0xFF,20*sizeof(int));

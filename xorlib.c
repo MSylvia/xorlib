@@ -472,12 +472,12 @@ void xowaitvblank(void)
 #endif
 }
 
-#define Xolinedirect(y) &xorlib_screen_buffer[xorlib_pitch*(y)+xorlib_offset]
+#define Xodirectline(y) &xorlib_screen_buffer[xorlib_pitch*(y)+xorlib_offset]
 
-int* xolinedirect(int y)
+int* xodirectline(short y)
 {
 #ifdef PIC32ANY
-   return Xolinedirect(y);
+   return Xodirectline(y);
 #endif
 #ifdef DOS32
 
@@ -498,7 +498,7 @@ int* xonextline(int *p)
 
 #endif
 #ifdef TERM
-    return NULL
+    return NULL;
 #endif
 }
 
@@ -513,7 +513,7 @@ int* xoprevline(int *p)
 
 #endif
 #ifdef TERM
-    return NULL
+    return NULL;
 #endif
 }
 
