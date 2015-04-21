@@ -22,7 +22,7 @@ int main()
    p = xodirectline(y);
    if(y<2||y>=198)
    {   /* white frame */
-       memset(p,0xFF,20*sizeof(int));
+       for(i=0;i<20;i++) p[i] = 0xFFFFFFFF;
        continue;
    }
    p[0] = 0xF0000000;
