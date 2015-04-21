@@ -52,7 +52,7 @@ THE SOFTWARE.
 
 */
 
-#define KEYFRAMES (5*60)
+#define KEYFRAMES (10*30)
 
 int total = 0;
 int cols = 67;
