@@ -552,7 +552,7 @@ int xochar(unsigned char x, unsigned char y, char c)
     register int shf = (3-(x&3))<<3;
     register int msk = ~(255<<shf);
     register const unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
-    int *line_buffer = Xolinedirect(y<<3);
+    int *line_buffer = Xodirectline(y<<3);
     line_buffer[j]=(line_buffer[j] & msk)|(ptr[0]<<shf);line_buffer=Xonextline(line_buffer);
     line_buffer[j]=(line_buffer[j] & msk)|(ptr[1]<<shf);line_buffer=Xonextline(line_buffer);
     line_buffer[j]=(line_buffer[j] & msk)|(ptr[2]<<shf);line_buffer=Xonextline(line_buffer);
@@ -599,7 +599,7 @@ int xopixel(short x, short y, char c)
 #ifdef TERM
    xochar(x,y,(c<10)?('0'+c):('A'+c-10)); /* text mode hack */
 #else
-   register int *line_buffer = Xolinedirect(y);
+   register int *line_buffer = Xodirectline(y);
    if (c > 0)
      line_buffer[x >> 5] |= 1<<(31-(x & 0x1f));
    else if (c==0)
@@ -616,7 +616,7 @@ int xoget(short x, short y)
     return 0;
 #else
     /* The following construction detects exactly one bit at the x,y location */
-    register int* line_buffer = Xolinedirect(y);
+    register int* line_buffer = Xodirectline(y);
     return (line_buffer[(x >> 5) + (y * xorlib_pitch)] & (1<<(31-(x & 0x1f))))?1:0 ;
 #endif
 }

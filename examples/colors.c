@@ -5,7 +5,7 @@
 int main()
 {
 
- int y,*p;
+ int i,y,*p;
 
  xoinit(XOMODE_160x200_COL15); /* gray colors 5 and 10 are identical */
 
