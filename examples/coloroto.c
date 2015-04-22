@@ -1,7 +1,6 @@
 /* coloroto.c - A.A.Shabarshin (April 2015) */
 
 #include "xorlib.h"
-#include <stdio.h>
 
 /* Lets keep it in RAM */
 unsigned char sinus[90] = { 0 , 4 , 8 , 13 , 17 , 22 , 26 , 31 , 35 , 40 , 44 , 48 , 53 ,
@@ -21,7 +20,6 @@ int div10[160]; /* to make fast division by 10 */
 
 int main()
 {
-
  register int x,b,c,r,a=0;
  int y,*p,s=60;
  unsigned long f;
