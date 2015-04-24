@@ -86,7 +86,7 @@ int xorlib_offset = 0;
 int xorlib_width = 640;
 int xorlib_maxcol = 79;
 int xorlib_maxrow = 24;
-volatile int xorlib_pitch = 20;
+volatile int xorlib_pitch = 80;
 #ifdef PIC32ANY
 volatile unsigned long xorlib_seconds = 0;
 volatile unsigned long xorlib_frames = 0;
@@ -126,10 +126,10 @@ volatile int xorlib_curline = 0;
 
 #endif
 
-#define SCREENSZ 4600 // 18400 bytes
-int xorlib_screen_buffer[SCREENSZ];
-volatile int *xorlib_screen_buffer_addr = xorlib_screen_buffer;
-volatile int *xorlib_screen_ptr;
+#define SCREENSZ 18400
+unsigned char xorlib_screen_buffer[SCREENSZ];
+volatile unsigned char *xorlib_screen_buffer_addr = xorlib_screen_buffer;
+volatile unsigned char *xorlib_screen_ptr;
 
 // video active lines -- 200 total
 #define image_start 20
@@ -165,15 +165,15 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
     if (xorlib_curline >= image_start && xorlib_curline < image_end){
         // set the Chan1 DMA transfer parameters: source & destination address,
         // source & destination size, number of bytes per event
-        // 32 bytes / line with 4 bytes per transfer (SPI in 32 bit mode)
-        //screen_ptr = screen_buffer + ((xorlib_curline - image_start)<<5) ;
-        DmaChnSetTxfer(1, (void*)xorlib_screen_ptr, (void*)&SPI1BUF, xorlib_pitch<<2, 4, 4); 
+        // 40,80 or 92 bytes / line with 1 byte per transfer (SPI in 8 bit mode)
+        // screen_ptr = screen_buffer + ((xorlib_curline - image_start)*xorlib_pitch) ;
+        DmaChnSetTxfer(1, (void*)xorlib_screen_ptr, (void*)&SPI1BUF, xorlib_pitch, 1, 1);
         // IRO 17 is the output compare 3 interrupt (See datasheet table 7.1)
         DmaChnSetEventControl(1, DMA_EV_START_IRQ(17)); //
-        // turn it on for 32 bytes
+        // turn it on
         DmaChnEnable(1);
         // increment the image memory pointer for the next ISR pass
-        xorlib_screen_ptr += xorlib_pitch; // 32-bit words per line
+        xorlib_screen_ptr += xorlib_pitch; // bytes per line
     }
     // update the frame time_tick immediately after image is copied
     else if(xorlib_curline==image_end)
@@ -237,7 +237,7 @@ int xoinit(short m)
 #ifdef PIC32ANY
   int l,o;
 
-  memset(xorlib_screen_buffer,0,sizeof(SCREENSZ)*sizeof(int));
+  memset(xorlib_screen_buffer,0,sizeof(SCREENSZ));
 
 /* delay before video */
   l = 360;
@@ -252,16 +252,17 @@ int xoinit(short m)
       case XOMODE_320x200_MONO:
       case XOMODE_160x100_GRAY5:
           xorlib_width = 320;
-          xorlib_pitch = 10;
+          xorlib_pitch = 40;
           xorlib_offset = 0;
           o = 4;
           break;
 
       case XOMODE_640x200_MONO:
-      case XOMODE_320x100_GRAY5:
+      case XOMODE_213x200_GRAY4:
+          l -= 16;
           xorlib_width = 640;
-          xorlib_pitch = 20;
-          xorlib_offset = 0;
+          xorlib_pitch = 81;
+          xorlib_offset = 1;
           o = 2;
           break;
 
@@ -269,14 +270,15 @@ int xoinit(short m)
       case XOMODE_160x100_COL120:
           xorlib_width = 640;
 #ifdef PIC32NTSCQ
-          l -= 192;
-          xorlib_pitch = 23;
-          xorlib_offset = 3;
+          l -= 208;
+          xorlib_pitch = 92;
+          xorlib_offset = 12;
           xopalette(0);
 #endif
 #ifdef PIC32NTSC
-          xorlib_pitch = 20;
-          xorlib_offset = 0;
+          l -= 16;
+          xorlib_pitch = 81;
+          xorlib_offset = 1;
           m = XOMODE_640x200_MONO;
 #endif
           o = 2;
@@ -349,8 +351,8 @@ int xoinit(short m)
     mPORTBClearBits(BIT_2);
     mPORTBClearBits(BIT_3);
 
-    // divide Fpb by N, configure the I/O ports. 32 bit transfer
-    SpiChnOpen(SPI_CHANNEL1, SPI_OPEN_ON | SPI_OPEN_MODE32 | SPI_OPEN_MSTEN , o);
+    // divide Fpb by N, configure the I/O ports. 8 bit transfer
+    SpiChnOpen(SPI_CHANNEL1, SPI_OPEN_ON | SPI_OPEN_MODE8 | SPI_OPEN_MSTEN, o);
 
     //=== DMA Channel 1 ================================
     // Open DMA Chan1 and chain from channel zero
@@ -374,18 +376,19 @@ int xopalette(short p)
 #ifdef TERM
     return 0;
 #else
-    register int y,*b = xorlib_screen_buffer;
-    if(xorlib_pitch!=23) return 0;
+    register int i,y;
+    register unsigned char *b = xorlib_screen_buffer;
+    if(xorlib_pitch!=92) return 0;
     for(y=0;y<DY;y++)
     {
         switch(p)
         {
-            case 0: b[0]=0x0CCCCCCC; b[1]=0xCC000000; break;
-            case 1: b[0]=0x19999999; b[1]=0x98000000; break;
-            case 2: b[0]=0x33333333; b[1]=0x30000000; break;
-            case 3: b[0]=0x66666666; b[1]=0x60000000; break;
+            case 0: b[0]=0x00; b[1]=0x0C; b[2]=0xCC; b[3]=0xCC; b[4]=0xCC; b[5]=0xCC; break;
+            case 1: b[0]=0x00; b[1]=0x19; b[2]=0x99; b[3]=0x99; b[4]=0x99; b[5]=0x98; break;
+            case 2: b[0]=0x00; b[1]=0x33; b[2]=0x33; b[3]=0x33; b[4]=0x33; b[5]=0x30; break;
+            case 3: b[0]=0x00; b[1]=0x66; b[2]=0x66; b[3]=0x66; b[4]=0x66; b[5]=0x60; break;
         }
-        b[2] = 0x00000000;
+        for(i=6;i<12;i++) b[i]=0x00;
         b += xorlib_pitch;
     }
     return 1;
@@ -403,7 +406,7 @@ unsigned long xoconfig(void)
          (1<<XOMODE_160x100_GRAY5)|
 #ifndef TERM
          (1<<XOMODE_640x200_MONO)|
-         (1<<XOMODE_320x100_GRAY5)|
+         (1<<XOMODE_213x200_GRAY4)|
 #endif
 #ifdef PIC32NTSCQ
          (1<<XOMODE_160x200_COL15)|
@@ -474,7 +477,7 @@ void xowaitvblank(void)
 
 #define Xodirectline(y) &xorlib_screen_buffer[xorlib_pitch*(y)+xorlib_offset]
 
-int* xodirectline(short y)
+unsigned char* xodirectline(short y)
 {
 #ifdef PIC32ANY
    return Xodirectline(y);
@@ -489,7 +492,7 @@ int* xodirectline(short y)
 
 #define Xonextline(p) ((p)+xorlib_pitch)
 
-int* xonextline(int *p)
+unsigned char* xonextline(unsigned char *p)
 {
 #ifdef PIC32ANY
     return Xonextline(p);
@@ -504,7 +507,7 @@ int* xonextline(int *p)
 
 #define Xoprevline(p) ((p)-xorlib_pitch)
 
-int* xoprevline(int *p)
+unsigned char* xoprevline(unsigned char *p)
 {
 #ifdef PIC32ANY
     return Xoprevline(p);
@@ -548,19 +551,16 @@ int xochar(unsigned char x, unsigned char y, char c)
     mvaddch(y,x,c);
 #else
 #ifndef NOFONT
-    register int j = x>>2;
-    register int shf = (3-(x&3))<<3;
-    register int msk = ~(255<<shf);
     register const unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
-    int *line_buffer = Xodirectline(y<<3);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[0]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[1]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[2]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[3]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[4]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[5]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[6]<<shf);line_buffer=Xonextline(line_buffer);
-    line_buffer[j]=(line_buffer[j] & msk)|(ptr[7]<<shf);
+    unsigned char *line_buffer = Xodirectline(y<<3);
+    line_buffer[x] = ptr[0]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[1]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[2]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[3]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[4]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[5]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[6]; line_buffer = Xonextline(line_buffer);
+    line_buffer[x] = ptr[7];
 #endif
 #endif
   }
@@ -599,13 +599,13 @@ int xopixel(short x, short y, char c)
 #ifdef TERM
    xochar(x,y,(c<10)?('0'+c):('A'+c-10)); /* text mode hack */
 #else
-   register int *line_buffer = Xodirectline(y);
+   register unsigned char *line_buffer = Xodirectline(y);
    if (c > 0)
-     line_buffer[x >> 5] |= 1<<(31-(x & 0x1f));
+     line_buffer[x >> 3] |= 1<<(7-(x&7));
    else if (c==0)
-     line_buffer[x >> 5] &= ~(1<<(31-(x & 0x1f)));
+     line_buffer[x >> 3] &= ~(1<<(7-(x&7)));
    else // c < 0
-     line_buffer[x >> 5] ^= 1<<(31-(x & 0x1f));
+     line_buffer[x >> 3] ^= 1<<(7-(x&7));
 #endif
    return 1;
 }
@@ -616,8 +616,8 @@ int xoget(short x, short y)
     return 0;
 #else
     /* The following construction detects exactly one bit at the x,y location */
-    register int* line_buffer = Xodirectline(y);
-    return (line_buffer[(x >> 5) + (y * xorlib_pitch)] & (1<<(31-(x & 0x1f))))?1:0 ;
+    register unsigned char* line_buffer = Xodirectline(y);
+    return (line_buffer[(x >> 3) + (y * xorlib_pitch)] & (1<<(7-(x&7))))?1:0 ;
 #endif
 }
 

@@ -10,7 +10,7 @@ See for more info: http://www.xorlib.com
 #ifndef _XORLIB_H_
 #define _XORLIB_H_
 
-#define XORLIB_VERSION 0x0001 /* v0.1 */
+#define XORLIB_VERSION 0x0002 /* v0.2 */
 
 /* Available external macros:
 
@@ -31,7 +31,7 @@ See for more info: http://www.xorlib.com
 #define XOMODE_160x100_GRAY5   1 /* Pseudo mode on top of mode 0 with 5 shades of gray */
 /* NTSC compatible video modes - 640 bits per line */
 #define XOMODE_640x200_MONO    2 /* Black and white 640x200 */
-#define XOMODE_320x100_GRAY5   3 /* Pseudo mode on top of mode 2 with 5 shades of gray */
+#define XOMODE_213x200_GRAY4   3 /* Pseudo mode on top of mode 2 with 4 shades of gray */
 #define XOMODE_160x200_COL15   4 /* Color burst mode over 640x200 with 15 unique colors (4 pallets) */
 #define XOMODE_160x100_COL120  5 /* Pseudo mode on top of mode 4 with about 120 unique dithered colors */
 /* NTSC compatible video modes with additional hardware - 640 bits per line */
@@ -47,7 +47,7 @@ See for more info: http://www.xorlib.com
 #define XOMODE_640x350_COL16  12 /* EGA-like mode with standard 16-color palette */
 #define XOMODE_640x480_COL16  13 /* VGA-like mode with standard 16-color palette */
 #define XOMODE_800x600_COL16  14 /* SVGA-like mode with standard 16-color palette */
-#define XOMODE_EXTENDED_VGA   15 /* Placeholder for other VGA modes */
+#define XOMODE_ENHANCED_VGA   15 /* Placeholder for other VGA modes */
 
 /* Standard colors (directly supported only in modes >=7 and simulated in mode 5) */
 #define XOCOLOR_BLACK           0
@@ -111,8 +111,8 @@ struct xoimage
  short width, height;     /* width and height of the image in pixels */
  unsigned char pitch;     /* pitch in ints (to calculate vertical offset) */
  signed char bpp;         /* bits per pixel (negative if grayscale) */
- int *data;               /* pointer to the image data */
- int *mask;               /* optional pointer to the mask */
+ unsigned char *data;               /* pointer to the image data */
+ unsigned char *mask;               /* optional pointer to the mask */
 };
 
 /* Some macros */
@@ -166,9 +166,9 @@ int xogray5(int i);                                     /* 5 shades of gray func
 int xoswitchscreens(void);                              /* switch primary and secondary screens (in case of double buffering) */
 int xouseprimary(void);                                 /* use primary screen (default) */
 int xousesecondary(void);                               /* use secondary screen (in case of double buffering) */
-int* xodirectline(short y);                             /* return pointer to video line for direct access */
-int* xoprevline(int *p);                                /* return pointer to the previous video line for direct access */
-int* xonextline(int *p);                                /* return pointer to the next video line for direct access */
+unsigned char* xodirectline(short y);                   /* return pointer to video line for direct access */
+unsigned char* xoprevline(unsigned char *p);            /* return pointer to the previous video line for direct access */
+unsigned char* xonextline(unsigned char *p);            /* return pointer to the next video line for direct access */
 int xocopy(struct xoimage* d, struct xoimage* s);       /* copy one image into another with mask if presented */
 int xorcopy(struct xoimage* d, struct xoimage* s);      /* copy one image into another with xor -> 0 if not supported */
 int xopcopy(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h); /* partial copy without mask */
