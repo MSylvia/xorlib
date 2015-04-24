@@ -173,10 +173,12 @@ int xocopy(struct xoimage* d, struct xoimage* s);       /* copy one image into a
 int xorcopy(struct xoimage* d, struct xoimage* s);      /* copy one image into another with xor -> 0 if not supported */
 int xopcopy(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h); /* partial copy without mask */
 int xopcopyk(struct xoimage* d, struct xoimage* s, short x, short y, short w, short h, char c); /* partial copy with a key color */
-int xocopyxbm(struct xoimage* d, const unsigned char* s, short x, short y); /* copy image from XBM */
-int xocopymyg(struct xoimage* d, const unsigned char* s, int f); /* copy image from MYG frame */
-int xocopygif(struct xoimage* d, const unsigned char* s, int f); /* copy image from GIF frame (if GIF decoder is enabled) */
-int xocopyjpg(struct xoimage* d, const unsigned char* s);        /* copy image from JPEG (if JPEG decoder is enabled) */
+int xocopytxt(struct xoimage* d, const char* s, short x, short y); /* render text to image coordinates x,y */
+int xocopyxbm(struct xoimage* d, const unsigned char* s, short w, short h);  /* copy image from XBM */
+int xocopyeta(struct xoimage* d, const unsigned char* s, short f, short *t); /* copy image from ETA frame */
+int xocopymyg(struct xoimage* d, const unsigned char* s, short f, short *t); /* copy image from MYG frame */
+int xocopygif(struct xoimage* d, const unsigned char* s, short f, short *t); /* copy image from GIF frame (if GIF decoder is enabled) */
+int xocopyjpg(struct xoimage* d, const unsigned char* s); /* copy image from JPEG (if JPEG decoder is enabled) */
 
 #ifdef __cplusplus
 }
