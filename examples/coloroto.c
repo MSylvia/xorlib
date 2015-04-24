@@ -1,6 +1,7 @@
 /* coloroto.c - A.A.Shabarshin (April 2015) */
 
 #include "xorlib.h"
+#include <stdio.h>
 
 /* Lets keep it in RAM */
 unsigned char sinus[90] = { 0 , 4 , 8 , 13 , 17 , 22 , 26 , 31 , 35 , 40 , 44 , 48 , 53 ,
@@ -20,11 +21,14 @@ int div10[160]; /* to make fast division by 10 */
 
 int main()
 {
- register int x,b,c,r,a=0;
- int y,*p,s=60;
- unsigned long f;
- 
- xoinit(XOMODE_160x200_COL15); /* gray colors 5 and 10 are identical */
+ register unsigned char* p;
+ register int x,x2,c,r;
+ register short co,si;
+ int y,s=60,a=0;
+ unsigned long f=0;
+ char str[16];
+
+ xoinit(XOMODE_160x200_COL15); /* gray colors 5 and 10 are identical, so it's 15 unique colors */
 
 /*
  0 - Default composite mode colors
@@ -32,34 +36,37 @@ int main()
  2 - Similar to Tandy composite mode colors
  3 - Similar to PCjr composite mode colors
 */
- xopalette(1);
+ xopalette(0);
 
  /* fill array for faster division by 10 */
  for(c=0;c<160;c++) div10[c] = c/10;
- 
+
 /*
  X' = X*COS(a) - Y*SIN(a) + X0
  Y' = X*SIN(a) + Y*COS(a) + Y0
 */
  while(1)
  {
-  /* it takes about full frame (1/60 sec) with -O1 option: */
+  co = COS(a); /* precalculate cosine here */
+  si = SIN(a); /* precalculate sine here */
   for(y=0;y<200;y++) /* go through every horizontal line */
   {
    p = xodirectline(y); /* get pointer to the videomemory of line Y */
    if(!p) break;
-   b = 80 - (((y-100)*SIN(a))>>9);
-   for(x=0;x<160;x++) /* go through every pixel in this line */
+   x2 = 80 - (((y-100)*si)>>9); /* this is Y portion of the formula */
+   for(x=0;x<160;x+=2) /* go through every 2 pixels in this line */
    {
-     /* we need only X' to get color, so we will ignore Y' for now */
-     c = (((x-80)*COS(a))>>8) + b;
-     if(c<0 || c>=160) c = 5; /* lets be gray outside of the color chart */
-     else c = div10[c]; /* calculate color value - it has to be from 0 to 15 */
-     r = (!(x&7))?c:((r<<4)|c); /* append integer with next pixel */
-     if((x&7)==7) p[x>>3] = r; /* copy assembled integer into video memory */
+     /* we need only X' to get color value for bar, so we will ignore Y' for now */
+     c = (((x-80)*co)>>8) + x2; /* x2 was calculated before this loop */
+     if(c<0 || c>=160) r = 0x50; /* lets be gray outside of the color chart */
+     else r = div10[c]<<4; /* calculate color value of 1st pixel (0...15) */
+     /* calculate color of 2nd pixel and store assembled byte with 2 pixels */
+     c = (((x-79)*co)>>8) + x2; /* x2 was calculated before this loop */
+     if(c<0 || c>=160) p[x>>1] = r|5; /* lets be gray outside of the color chart */
+     else p[x>>1] = r|div10[c]; /* calculate color value of 2nd pixel (0...15) */
    }
   }
-  if(++a==360) a = 0; /* rotate and check that it is in the range */
+  if(++a==360) a = 0; /* rotate and check that it's in the range */
 #if 1
   /* wait some number of frames in the beginning and then no wait */
   if(s>1)
@@ -67,6 +74,12 @@ int main()
     f = xoframes() + (255-sinus[89-s--]);
     while(xoframes() < f);
   }
+#else
+  /* measure performance - it has to be 0.200 or less with -O1 option to fit 1 frame */
+  sprintf(str,"%i.%i ",xoframes()-f-1,xocurline());
+  xostring(0,24,str);
+  f = xoframes();
+  while(xoframes()==f);
 #endif
  }
 
