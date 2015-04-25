@@ -109,10 +109,10 @@ See for more info: http://www.xorlib.com
 struct xoimage
 {
  short width, height;     /* width and height of the image in pixels */
- unsigned char pitch;     /* pitch in ints (to calculate vertical offset) */
- signed char bpp;         /* bits per pixel (negative if grayscale) */
- unsigned char *data;               /* pointer to the image data */
- unsigned char *mask;               /* optional pointer to the mask */
+ unsigned char pitch;     /* pitch in bytes (to calculate vertical offset) */
+ signed char bpp;         /* bits per pixel (negative for grayscale) */
+ unsigned char *data;     /* pointer to the image data */
+ unsigned char *mask;     /* optional pointer to the mask */
 };
 
 /* Some macros */
@@ -131,7 +131,7 @@ unsigned long xocontrols(void);                 /* return state of controls (see
 unsigned long xoframes(void);                   /* return frames counter */
 unsigned long xoseconds(void);                  /* return seconds counter */
 int xocurline(void);                            /* return current line of the frame (0 is 1st line of the video) */
-void xowaitvblank(void);                        /* wait for vertical blank */
+void xowaitretrace(void);                       /* wait for vertical retrace interval */
 void xodelay(int ms);                           /* delay in milliseconds */
 int xokeyboard(int *scancode);                  /* return ASCII code from keyboard */
 int xomouse(int *px, int *py);                  /* return mouse state (bit 0 - left button, bit 1 - right button) */

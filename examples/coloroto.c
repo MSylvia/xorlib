@@ -68,20 +68,18 @@ int main()
   }
   if(++a==360) a = 0; /* rotate and check that it's in the range */
 #if 1
-  /* wait some number of frames in the beginning and then wait blank */
+  /* wait some number of frames in the beginning */
   if(s>1)
   {
     f = xoframes() + (255-sinus[89-s--]);
     while(xoframes() < f);
   }
-  else xowaitvblank();
 #else
-  /* measure performance - it has to be 0.200 or less with -O1 option to fit 1 frame */
+  /* measure performance - it has to be less than 0.200 to fit 1 frame */
   sprintf(str,"%i.%i ",xoframes()-f-1,xocurline());
   xostring(0,24,str);
-  f = xoframes();
-  while(xoframes()==f);
 #endif
+  xowaitretrace();
  }
 
  return 0;
