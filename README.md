@@ -17,7 +17,7 @@ Folder "tests" has some test programs licensed under MIT-license.
 Folder "examples" has some public domain apps for XORLib - you can use
 them as a base for your application!
 
-![](http://nedopc.org/xorlib/colors.jpg "colors.c")
+![](http://nedopc.org/xorya/colors.jpg "colors.c")
 
 ## Acknowledgements
 
@@ -42,7 +42,7 @@ Author: Rich Geldreich
 ## Usage
 
 In order to build PIC32 application you need MPLAB X IDE from Microchip
-with XC32 compiler. You need to create empty project for PIC32MX170256B
+with XC32 compiler. You need to create empty project for PIC32MX170F256B
 (or smaller device if your program will fit) and add header files:
 - xorlib.h
 - nedofont.h
