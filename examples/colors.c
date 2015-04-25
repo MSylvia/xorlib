@@ -5,7 +5,8 @@
 int main()
 {
 
- int i,y,*p;
+ int i,y;
+ unsigned char *p;
 
  xoinit(XOMODE_160x200_COL15); /* gray colors 5 and 10 are identical */
 
@@ -22,29 +23,26 @@ int main()
    p = xodirectline(y);
    if(y<2||y>=198)
    {   /* white frame */
-       for(i=0;i<20;i++) p[i] = 0xFFFFFFFF;
+       for(i=0;i<80;i++) p[i] = 0xFF;
        continue;
    }
-   p[0] = 0xF0000000;
-   p[1] = 0x00111111;
-   p[2] = 0x11112222;
-   p[3] = 0x22222233;
-   p[4] = 0x33333333;
-   p[5] = 0x44444444;
-   p[6] = 0x44555555;
-   p[7] = 0x55556666;
-   p[8] = 0x66666677;
-   p[9] = 0x77777777;
-   p[10] = 0x88888888;
-   p[11] = 0x88999999;
-   p[12] = 0x9999AAAA;
-   p[13] = 0xAAAAAABB;
-   p[14] = 0xBBBBBBBB;
-   p[15] = 0xCCCCCCCC;
-   p[16] = 0xCCDDDDDD;
-   p[17] = 0xDDDDEEEE;
-   p[18] = 0xEEEEEEFF;
-   p[19] = 0xFFFFFFFF;
+   p[0] = 0xF0;
+   for(i=1;i<5;i++) p[i] = 0x00;
+   for(i=5;i<10;i++) p[i] = 0x11;
+   for(i=10;i<15;i++) p[i] = 0x22;
+   for(i=15;i<20;i++) p[i] = 0x33;
+   for(i=20;i<25;i++) p[i] = 0x44;
+   for(i=25;i<30;i++) p[i] = 0x55;
+   for(i=30;i<35;i++) p[i] = 0x66;
+   for(i=35;i<40;i++) p[i] = 0x77;
+   for(i=40;i<45;i++) p[i] = 0x88;
+   for(i=45;i<50;i++) p[i] = 0x99;
+   for(i=50;i<55;i++) p[i] = 0xAA;
+   for(i=55;i<60;i++) p[i] = 0xBB;
+   for(i=60;i<65;i++) p[i] = 0xCC;
+   for(i=65;i<70;i++) p[i] = 0xDD;
+   for(i=70;i<75;i++) p[i] = 0xEE;
+   for(i=75;i<80;i++) p[i] = 0xFF;
  }
 
  return 0;

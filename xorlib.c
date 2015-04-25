@@ -26,6 +26,7 @@ THE SOFTWARE.
 */
 
 #include "xorlib.h"
+
 #ifdef PIC32NTSC
 #define PIC32ANY
 #endif
@@ -43,9 +44,19 @@ THE SOFTWARE.
 #include <stdarg.h>
 #ifdef TERM
 #include <ncurses.h>
+#define XOEXIT
 #else
 #ifndef NOFONT
 #include "nedofont.h"
+#endif
+#ifdef DOSANY
+#include <stdlib.h>
+#include <conio.h>
+#include <time.h>
+#ifdef DOS32
+#include <graph.h>
+#endif
+#define XOEXIT
 #endif
 #endif
 
@@ -79,14 +90,26 @@ THE SOFTWARE.
 #define DY 25
 #else
 #define DX xorlib_width
+#ifdef DOSANY
+#define DY xorlib_height
+#endif
 #endif
 
 int xorlib_curmode = -1;
 int xorlib_offset = 0;
-int xorlib_width = 640;
+int xorlib_width = 0;
+#ifdef DOSANY
+int xorlib_height = 200;
+unsigned long xorlib_start = 0;
+#endif
+#ifdef DOS32
+#define FPS 60
+unsigned char* xorlib_ptry[200];
+int xorlib_cury = 0;
+#endif
 int xorlib_maxcol = 79;
 int xorlib_maxrow = 24;
-volatile int xorlib_pitch = 80;
+volatile int xorlib_pitch = 0;
 #ifdef PIC32ANY
 volatile unsigned long xorlib_seconds = 0;
 volatile unsigned long xorlib_frames = 0;
@@ -206,15 +229,21 @@ void __ISR(_TIMER_2_VECTOR, ipl2) Timer2Handler(void)
 FILE* xorlib_debug = NULL;
 #endif
 
-#ifdef TERM
+#ifdef XOEXIT
 void xoexit(void)
 {
 #ifdef DEBUG
   if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xoexit\n");
 #endif
+#ifdef TERM
   nodelay(stdscr, FALSE);
   getch();
   endwin();
+#endif
+#ifdef DOS32
+  getch();
+  _setvideomode(-1);
+#endif
 #ifdef DEBUG
   if(xorlib_debug!=NULL) fclose(xorlib_debug);
 #endif
@@ -223,16 +252,6 @@ void xoexit(void)
 
 int xoinit(short m)
 {
-#ifdef TERM
-  atexit(xoexit);
-  initscr();
-  raw();
-  keypad(stdscr, TRUE);
-  noecho();
-  nodelay(stdscr, TRUE);
-  if(m<0) m = XOMODE_320x200_MONO;
-  xorlib_curmode = m;
-#endif
 
 #ifdef PIC32ANY
   int l,o;
@@ -362,8 +381,61 @@ int xoinit(short m)
     INTEnableSystemMultiVectoredInt();
 
 #endif
+
+#ifdef DOS32
+  int i = 0;
+  xorlib_start = clock();
+  atexit(xoexit);
+  switch(m)
+  {
+      default: m = XOMODE_320x200_MONO;
+
+      case XOMODE_320x200_MONO:
+      case XOMODE_160x100_GRAY5:
+          xorlib_width = 320;
+          _setvideomode(5);
+          break;
+
+      case XOMODE_640x200_MONO:
+      case XOMODE_213x200_GRAY4:
+          xorlib_width = 640;
+          _setvideomode(6);
+          i = -1;
+          break;
+
+      case XOMODE_160x200_COL15:
+      case XOMODE_160x100_COL120:
+          xorlib_width = 640;
+          _setvideomode(6);
+          i = -1;
+          outp(0x3D8,inp(0x3D8)&0xFB);
+          break;
+  }
+  xorlib_maxcol = (xorlib_width>>3)-1;
+  if(i<0)
+  {
+     for(i=0;i<200;i++)
+     {
+       if(i&1) xorlib_ptry[i] = ((unsigned char*)0xBA000) + i*40 - 40;
+       else    xorlib_ptry[i] = ((unsigned char*)0xB8000) + i*40;
+     }
+  }
+  xorlib_curmode = m;
+#endif
+
+#ifdef TERM
+  atexit(xoexit);
+  initscr();
+  raw();
+  keypad(stdscr, TRUE);
+  noecho();
+  nodelay(stdscr, TRUE);
+  if(m<0) m = XOMODE_320x200_MONO;
+  xorlib_curmode = m;
+#endif
+
 #ifdef DEBUG
-  xorlib_debug = fopen("xorlib.out","wt");
+  if(xorlib_debug==NULL) xorlib_debug = fopen("xorlib.out","wt");
   if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xoinit\n");
 #endif
   return m;
@@ -373,9 +445,7 @@ int xoinit(short m)
 
 int xopalette(short p)
 {
-#ifdef TERM
-    return 0;
-#else
+#ifdef PIC32NTSCQ
     register int i,y;
     register unsigned char *b = xorlib_screen_buffer;
     if(xorlib_pitch!=92) return 0;
@@ -392,6 +462,8 @@ int xopalette(short p)
         b += xorlib_pitch;
     }
     return 1;
+#else
+    return 0;
 #endif
 }
 
@@ -416,6 +488,10 @@ unsigned long xoconfig(void)
 #ifdef PIC32NTSC
           XOCONFIG_NTSCTV|
 #endif
+#ifdef DOSANY
+         (1<<XOMODE_160x200_COL15)|
+         (1<<XOMODE_160x100_COL120)|
+#endif
           is|ib;
 }
 
@@ -437,28 +513,36 @@ unsigned long xocontrols(void)
 
 unsigned long xoframes(void)
 {
-#ifdef TERM
-    return 0;
-#else
+#ifdef PIC32ANY
     return xorlib_frames;
+#else
+#ifdef DOS32
+    return clock()*FPS/CLOCKS_PER_SEC;
+#else
+    return 0;
+#endif
 #endif
 }
 
 unsigned long xoseconds(void)
 {
-#ifdef TERM
-    return 0;
-#else
+#ifdef PIC32ANY
     return xorlib_seconds;
+#else
+#ifdef DOS32
+    return clock()/CLOCKS_PER_SEC;
+#else
+    return 0;
+#endif
 #endif
 }
 
 int xocurline(void)
 {
-#ifdef TERM
-    return 0;
-#else
+#ifdef PIC32ANY
     return xorlib_curline;
+#else
+    return 0;
 #endif
 }
 
@@ -469,54 +553,79 @@ int xomode(void)
 
 void xowaitvblank(void)
 {
-#ifndef TERM
+#ifdef PIC32ANY
     unsigned long frame = xorlib_frames;
     while(xorlib_frames==frame);
 #endif
 }
 
+#ifdef PIC32ANY
 #define Xodirectline(y) &xorlib_screen_buffer[xorlib_pitch*(y)+xorlib_offset]
+#else
+#define Xodirectline(y) xodirectline(y)
+#endif
 
 unsigned char* xodirectline(short y)
 {
 #ifdef PIC32ANY
    return Xodirectline(y);
-#endif
+#else
 #ifdef DOS32
-
+   xorlib_cury = y;
+   return xorlib_ptry[y];
+#else
+   return NULL;
 #endif
-#ifdef TERM
-   return NULL; /* text mode doesn't allow direct video memory access */
 #endif
 }
 
+#ifdef PIC32ANY
 #define Xonextline(p) ((p)+xorlib_pitch)
+#else
+#define Xonextline(p) xonextline(p)
+#endif
 
 unsigned char* xonextline(unsigned char *p)
 {
 #ifdef PIC32ANY
     return Xonextline(p);
-#endif
+#else
 #ifdef DOS32
-
-#endif
-#ifdef TERM
+    if(p!=xorlib_ptry[xorlib_cury])
+    {
+      for(xorlib_cury=0;xorlib_cury<xorlib_height;xorlib_cury++)
+      {
+         if(xorlib_ptry[xorlib_cury]==p) break;
+      }
+      if(xorlib_cury==xorlib_height) return NULL;
+    }
+    if(++xorlib_cury >= xorlib_height) xorlib_cury = 0;
+    return xorlib_ptry[xorlib_cury];
+#else
     return NULL;
 #endif
+#endif
 }
-
-#define Xoprevline(p) ((p)-xorlib_pitch)
 
 unsigned char* xoprevline(unsigned char *p)
 {
 #ifdef PIC32ANY
-    return Xoprevline(p);
-#endif
+    return p-xorlib_pitch;
+#else
 #ifdef DOS32
-
-#endif
-#ifdef TERM
+    if(p!=xorlib_ptry[xorlib_cury])
+    {
+      for(xorlib_cury=0;xorlib_cury<xorlib_height;xorlib_cury++)
+      {
+         if(xorlib_ptry[xorlib_cury]==p) break;
+      }
+      if(xorlib_cury==xorlib_height) return NULL;
+    }
+    if(--xorlib_cury < 0) xorlib_cury = xorlib_height-1;
+    return xorlib_ptry[xorlib_cury];
+#else
     return NULL;
+#endif
 #endif
 }
 
@@ -769,4 +878,5 @@ int xorect(short x, short y, short w, short h, char c)
         xoline(x+1,y,x+1,y2,c);
         xoline(x2-1,y,x2-1,y2,c);
     }
+    return 1;
 }
