@@ -12,7 +12,8 @@ far from completion, but usable. Check progress on our
 
 Folder "tools" has some tools licensed under MIT-license.
 
-Folder "tests" has some test programs licensed under MIT-license.
+Folder "tests" has some random test programs - some public domain, but
+some licensed under MIT-license.
 
 Folder "examples" has some public domain apps for XORLib - you can use
 them as a base for your application!
@@ -54,17 +55,16 @@ and source files:
 
 Then you need to add additional options for xc32-gcc (in Project Properties):
 
-- option -DPIC32NTSCQ (if you have external crystal 14.31818 MHz) will set
-28.63636MHz as peripheral clock and 57.27272MHz as CPU clock (this option
-enables NTSC colors):
-
-![](http://nedopc.org/xorya/pic32ntscQ.gif "PIC32NTSCQ")
-
-- option -DPIC32NTSC (if you don't have external crystal 14.31818 MHz and
-internal 8 MHz oscillator will be used instead) will set 30MHz as peripheral
-clock and 60MHz as CPU clock (black and white modes only):
+- option -DPIC32NTSC will use internal 8 MHz oscillator with 30MHz as peripheral
+clock and 60MHz as CPU clock (black and white modes are only possible here):
 
 ![](http://nedopc.org/xorya/pic32ntsc.gif "PIC32NTSC")
+
+- option -DPIC32NTSCQ will use external crystal 14.31818 MHz with
+28.63636MHz as peripheral clock and 57.27272MHz as CPU clock
+(this option enables NTSC colors):
+
+![](http://nedopc.org/xorya/pic32ntscQ.gif "PIC32NTSCQ")
 
 Also it is a good idea to power your device through the same PICkit3 that
 you will use for programming (option "Power" for PICkit3 configuration of
