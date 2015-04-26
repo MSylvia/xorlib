@@ -69,7 +69,7 @@ setting 28.63636MHz as peripheral clock and 57.27272MHz as CPU clock
 
 Also it is a good idea to power your device through the same PICkit3 that
 you will use for programming (option "Power" for PICkit3 configuration of
-Project Properties in MPLAB X). PICKit3 connector:
+Project Properties in MPLAB X) - this is PICKit3 pinout:
 
 1. MCLR (pin 1)
 2. +3.3V (pin 13)
