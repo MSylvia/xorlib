@@ -55,14 +55,15 @@ and source files:
 
 Then you need to add additional options for xc32-gcc (in Project Properties):
 
-- option -DPIC32NTSC will use internal 8 MHz oscillator with 30MHz as peripheral
-clock and 60MHz as CPU clock (black and white modes are only possible here):
+- option -DPIC32NTSC will use internal 8 MHz oscillator with
+setting 30MHz as peripheral clock and 60MHz as CPU clock
+(black and white modes only):
 
 ![](http://nedopc.org/xorya/pic32ntsc.gif "PIC32NTSC")
 
 - option -DPIC32NTSCQ will use external crystal 14.31818 MHz with
-28.63636MHz as peripheral clock and 57.27272MHz as CPU clock
-(this option enables NTSC colors):
+setting 28.63636MHz as peripheral clock and 57.27272MHz as CPU clock
+(this option enables NTSC colors similar to CGA "composite" mode):
 
 ![](http://nedopc.org/xorya/pic32ntscQ.gif "PIC32NTSCQ")
 
