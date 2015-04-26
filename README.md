@@ -68,7 +68,13 @@ clock and 60MHz as CPU clock (black and white modes only):
 
 Also it is a good idea to power your device through the same PICkit3 that
 you will use for programming (option "Power" for PICkit3 configuration of
-Project Properties in MPLAB X).
+Project Properties in MPLAB X). PICKit3 connector:
+1 - MCLR (pin 1)
+2 - 3.3V (pin 13)
+3 - GND (pin 8)
+4 - PGED1 (pin 4)
+5 - PGEC1 (pin 5)
+6 - Not connected
 
 See http://xorlib.com for more info!
 
