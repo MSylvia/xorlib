@@ -81,3 +81,4 @@ Project Properties in MPLAB X) - this is PICKit3 pinout:
 See http://xorlib.com for more info!
 
 Shaos, March-April 2015
+
