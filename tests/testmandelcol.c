@@ -1,4 +1,4 @@
-/* test16colors.c - A.A.Shabarshin (April 2015) */
+/* test16colors.c - A.A.Shabarshin (April-May 2015) */
 
 #include <stdio.h>
 #include <math.h>
@@ -6,6 +6,7 @@
 #define RGB(r,g,b) (r|(g<<8)|(b<<16))
 
 unsigned long actual[16] = {
+#if 0
  RGB(  4,   4,  12),
  RGB(  1,  19, 159),
  RGB( 70,   2, 172),
@@ -22,6 +23,24 @@ unsigned long actual[16] = {
  RGB(102, 253,  90),
  RGB(253, 182,  74),
  RGB(220, 217, 202),
+#else
+ RGB(0  , 0  , 0  ), /* #000000 H=0   S=0   V=0   0000 */
+ RGB(0  , 81 , 169), /* #0051A9 H=211 S=100 V=66  0001 */
+ RGB(123, 6  , 199), /* #7B06C7 H=276 S=97  V=78  0010 */
+ RGB(110, 88 , 255), /* #6E58FF H=248 S=65  V=100 0011 */
+ RGB(140, 45 , 0  ), /* #8C2D00 H=19  S=100 V=55  0100 */
+ RGB(127, 127, 127), /* #7F7F7F H=0   S=0   V=50  0101 */
+ RGB(255, 52 , 157), /* #FF349D H=329 S=80  V=100 0110 */
+ RGB(250, 134, 255), /* #FA86FF H=298 S=47  V=100 0111 */
+ RGB(4  , 120, 0  ), /* #047800 H=118 S=100 V=47  1000 */
+ RGB(0  , 202, 97 ), /* #00CA61 H=149 S=100 V=79  1001 */
+ RGB(127, 127, 127), /* #7F7F7F H=0   S=0   V=50  1010 */
+ RGB(114, 209, 255), /* #72D1FF H=200 S=55  V=100 1011 */
+ RGB(144, 166, 0  ), /* #90A600 H=68  S=100 V=65  1100 */
+ RGB(131, 248, 55 ), /* #83F837 H=96  S=78  V=97  1101 */
+ RGB(255, 173, 85 ), /* #FFAD55 H=31  S=67  V=100 1110 */
+ RGB(255, 255, 255)  /* #FFFFFF H=0   S=0   V=100 1111 */
+#endif
 };
 
 /*
@@ -48,19 +67,45 @@ unsigned long actual[16] = {
  E[235]  #F7
  E[245]  #FF
 
+ 2nd run with DOSBox composite colors - 22 colors:
+
+E[0]    #00 #FFFFFFFF   ERR=0.000
+E[10]   #40 #00 ERR=37.120
+E[29]   #44 #40 ERR=50.365
+E[56]   #64 #44 ERR=96.774
+E[72]   #44 #42 ERR=83.577 <<< #42
+E[83]   #C4 #44 ERR=46.049
+E[97]   #D4 #C4 ERR=33.487
+E[100]  #C8 #C4 ERR=35.390
+E[108]  #D8 #C8 ERR=29.657
+E[131]  #98 #88 ERR=89.590
+E[145]  #99 #98 ERR=32.321
+E[152]  #91 #81 ERR=39.412
+E[165]  #11 #10 ERR=30.945
+E[184]  #21 #11 ERR=76.372
+E[197]  #31 #21 ERR=84.776
+E[209]  #33 #31 ERR=45.441
+E[221]  #B2 #33 ERR=29.713
+E[222]  #B3 #B2 ERR=28.666
+E[230]  #B7 #B3 ERR=33.281
+E[238]  #F3 #B7 ERR=15.147
+E[242]  #FB #F3 ERR=34.598
+E[248]  #FF #F7 ERR=40.069
+
 */
 
 int main()
 {
- int i,j,me,mj,r,g,b;
- double d,c1,c2;
+ int i,j,mj,mj2,r,g,b;
+ double d,c1,c2,me;
 
  for(i=0;i<256;i++)
  {
    me = 1000;
-   mj = -1;
+   mj = mj2 = -1;
    for(j=0;j<256;j++)
    {
+      if((j&15) > (j>>4)) continue;
       d = 0;
       c1 = ((actual[j&15]&255)+(actual[j>>4]&255))/2.0;
       r = c1; if(c1-r>=0.5) r++; if(r>255) r=255;
@@ -83,16 +128,14 @@ int main()
       else c2=255;
       d += (c1-c2)*(c1-c2);
       d = sqrt(d);
-//      printf("%3.2lf\t",d);
       if(d < me)
       {
-        me = (int)d;
-        if(d-me >= 0.5) me++;
+        mj2 = mj;
         mj = j;
+        me = d;
       }
    }
-   if((mj&15) > (mj>>4)) mj=((mj&15)<<4)|(mj>>4);
-   printf("E[%i]\t#%2.2X\n",i,mj); // me
+   printf("E[%i]\t#%2.2X #%2.2X\tERR=%3.3lf\n",i,mj,mj2,me);
  }
 
  return 0;
