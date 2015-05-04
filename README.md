@@ -59,13 +59,13 @@ Then you need to add additional options for xc32-gcc (in Project Properties):
 setting 30MHz as peripheral clock and 60MHz as CPU clock
 (black and white modes only):
 
-![](http://nedopc.org/xorya/pic32ntsc.gif "PIC32NTSC")
+![](http://nedopc.org/xorya/pic32ntsc.png "PIC32NTSC")
 
 - option -DPIC32NTSCQ will use external crystal 14.31818 MHz with
 setting 28.63636MHz as peripheral clock and 57.27272MHz as CPU clock
 (this option enables NTSC colors similar to CGA "composite" mode):
 
-![](http://nedopc.org/xorya/pic32ntscQ.gif "PIC32NTSCQ")
+![](http://nedopc.org/xorya/pic32ntscQ.png "PIC32NTSCQ")
 
 Also it is a good idea to power your device through the same PICkit3 that
 you will use for programming (option "Power" for PICkit3 configuration of
@@ -80,5 +80,5 @@ Project Properties in MPLAB X) - this is PICKit3 pinout:
 
 See http://xorlib.com for more info!
 
-Shaos, March-April 2015
+Shaos, March-May 2015
 
