@@ -5,6 +5,8 @@
 
 #define RGB(r,g,b) (r|(g<<8)|(b<<16))
 
+//#define SAVEPAL
+
 unsigned long actual[16] = {
 #if 0
  RGB(  4,   4,  12),
@@ -73,7 +75,7 @@ E[0]    #00 #FFFFFFFF   ERR=0.000
 E[10]   #40 #00 ERR=37.120
 E[29]   #44 #40 ERR=50.365
 E[56]   #64 #44 ERR=96.774
-E[72]   #44 #42 ERR=83.577 <<< #42
+E[72]   #44 #42 ERR=83.577 <<< #42 or #E4?
 E[83]   #C4 #44 ERR=46.049
 E[97]   #D4 #C4 ERR=33.487
 E[100]  #C8 #C4 ERR=35.390
@@ -92,41 +94,89 @@ E[238]  #F3 #B7 ERR=15.147
 E[242]  #FB #F3 ERR=34.598
 E[248]  #FF #F7 ERR=40.069
 
+ 3rd run with DOSBox composite colors and 3+1 case - 32 colors:
+
+E[000]	#000 (next #FFFFFFFF)	ERR=0.000
+E[005]	#140 (next #000)	ERR=18.560
+E[015]	#040 (next #000)	ERR=24.341
+E[024]	#104 (next #040)	ERR=34.653
+E[034]	#044 (next #040)	ERR=45.063
+E[046]	#164 (next #044)	ERR=63.485
+E[075]	#1E4 (next #164)	ERR=56.985
+E[087]	#0C4 (next #044)	ERR=23.454
+E[094]	#14C (next #0C4)	ERR=17.146
+E[096]	#10C (next #0C4)	ERR=18.184
+E[099]	#18C (next #10C)	ERR=13.545
+E[107]	#0C8 (next #094)	ERR=31.817
+E[108]	#0D8 (next #0C8)	ERR=29.657
+E[127]	#1D9 (next #0D8)	ERR=101.376
+E[131]	#189 (next #098)	ERR=86.249
+E[150]	#109 (next #099)	ERR=21.783
+E[152]	#119 (next #109)	ERR=22.625
+E[155]	#091 (next #081)	ERR=24.086
+E[162]	#191 (next #091)	ERR=14.719
+E[168]	#011 (next #010)	ERR=14.023
+E[178]	#121 (next #011)	ERR=41.330
+E[190]	#021 (next #011)	ERR=99.103
+E[197]	#031 (next #021)	ERR=84.776
+E[204]	#113 (next #031)	ERR=55.073
+E[214]	#033 (next #031)	ERR=20.979
+E[218]	#1B3 (next #033)	ERR=14.231
+E[224]	#1F3 (next #1B3)	ERR=16.728
+E[231]	#0B7 (next #0B3)	ERR=27.731
+E[238]	#0F3 (next #0B7)	ERR=15.147
+E[241]	#13F (next #11F)	ERR=25.285
+E[249]	#1BF (next #13F)	ERR=16.843
+E[252]	#0FF (next #0F7)	ERR=17.173
+
 */
 
 int main()
 {
- int i,j,mj,mj2,r,g,b;
- double d,c1,c2,me;
+ int i,j,mj,mj2,r,g,b,hue,satur,value;
+ double d,c1,c2,me,chroma;
+#ifdef SAVEPAL
+ int k = 0;
+ short used[1<<18];
+ for(i=0;i<(1<<18);i++) used[i]=0;
+#endif
 
  for(i=0;i<256;i++)
  {
    me = 1000;
    mj = mj2 = -1;
-   for(j=0;j<256;j++)
+   for(j=0;j<512;j++)
    {
-      if((j&15) > (j>>4)) continue;
+      if(j<256 && (j&15) > (j>>4)) continue;
+      if(j>=256 && (j&15)==((j>>4)&15)) continue;
       d = 0;
-      c1 = ((actual[j&15]&255)+(actual[j>>4]&255))/2.0;
+
+      if(j<256) c1 = ((actual[j&15]&255)+(actual[j>>4]&255))/2.0;
+      else c1 = ((actual[j&15]&255)*3+(actual[(j>>4)&15]&255))/4.0;
       r = c1; if(c1-r>=0.5) r++; if(r>255) r=255;
       if(i<64) c2=255.0*i/63;
       else if(i<128) c2=255.0*(127-i)/63;
       else if(i<192) c2=0;
       else c2=255.0*(i-192)/63;
       d += (c1-c2)*(c1-c2);
-      c1 = (((actual[j&15]>>8)&255)+((actual[j>>4]>>8)&255))/2.0;
+
+      if(j<256) c1 = (((actual[j&15]>>8)&255)+((actual[j>>4]>>8)&255))/2.0;
+      else c1 = (((actual[j&15]>>8)&255)*3+((actual[(j>>4)&15]>>8)&255))/4.0;
       g = c1; if(c1-g>=0.5) g++; if(g>255) g=255;
       if(i<64) c2=0;
       else if(i<128) c2=255.0*(i-64)/63;
       else if(i<192) c2=255.0*(191-i)/63;
       else c2=255.0*(i-192)/63;
       d += (c1-c2)*(c1-c2);
-      c1 = (((actual[j&15]>>16)&255)+((actual[j>>4]>>16)&255))/2.0;
+
+      if(j<256) c1 = (((actual[j&15]>>16)&255)+((actual[j>>4]>>16)&255))/2.0;
+      else c1 = (((actual[j&15]>>16)&255)*3+((actual[(j>>4)&15]>>16)&255))/4.0;
       b = c1; if(c1-b>=0.5) b++; if(b>255) b=255;
       if(i<128) c2=0;
       else if(i<192) c2=255.0*(i-128)/63;
       else c2=255;
       d += (c1-c2)*(c1-c2);
+
       d = sqrt(d);
       if(d < me)
       {
@@ -134,9 +184,38 @@ int main()
         mj = j;
         me = d;
       }
+
+      if(i==0 && (j&15)!=10 && ((j>>4)&15)!=10) /* Calculate Hue, Saturation and Value */
+      {
+        c1 = c2 = r;
+        if(g < c1) c1 = g;
+        if(g > c2) c2 = g;
+        if(b < c1) c1 = b;
+        if(b > c2) c2 = b;
+        chroma = c2 - c1;
+        value = c2/255.0*100;
+        if(value==0) satur = 0;
+        else satur = chroma*10000/value/255.0;
+        if(satur>100) satur = 100;
+        if(satur==0) hue = 0;
+        else if(c2==r) hue=((g-b)/chroma)*60;
+        else if(c2==g) hue=((b-r)/chroma+2)*60;
+        else hue=((r-g)/chroma+4)*60; /* c2==b */
+        if(hue<0) hue+=360;
+#ifdef SAVEPAL
+        if(used[((r&0xFC)<<10)|((g&0xFC)<<4)|((b&0xFC)>>2)]++) continue;
+        k++;
+        printf("%3d %3d %3d ",r,g,b);
+#endif
+        printf("[%03d] #%3.3X -> #%2.2X%2.2X%2.2X H=%3d S=%3d V=%3d chroma=%d\n",j,j,r,g,b,hue,satur,value,(int)chroma);
+      }
    }
-   printf("E[%i]\t#%2.2X #%2.2X\tERR=%3.3lf\n",i,mj,mj2,me);
+   printf("E[%03d]\t#%3.3X (next #%3.3X)\tERR=%3.3lf\n",i,mj,mj2,me);
  }
+
+#ifdef SAVEPAL
+ printf("\nBig palette has %i unique colors\n",k);
+#endif
 
  return 0;
 }

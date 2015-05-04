@@ -1,4 +1,4 @@
-/* colors.h - A.A.Shabarshin (April 2015) */
+/* colors.c - A.A.Shabarshin (April 2015) */
 
 #include "xorlib.h"
 
