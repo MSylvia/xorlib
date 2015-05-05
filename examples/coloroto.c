@@ -1,5 +1,7 @@
 /* coloroto.c - A.A.Shabarshin (April 2015) */
 
+/* THIS SOURCE CODE IS PUBLIC DOMAIN */
+
 #include "xorlib.h"
 #include <stdio.h>
 
