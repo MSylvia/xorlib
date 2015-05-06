@@ -1,6 +1,8 @@
 /* mandelbr.c - A.A.Shabarshin (May 2015) */
 
-/* THIS SOURCE CODE IS PUBLIC DOMAIN */
+/* THIS IS PUBLIC DOMAIN AND PROVIDED AS IS */
+
+#include <stdio.h> /* for sprintf */
 
 #include "xorlib.h"
 
@@ -15,9 +17,17 @@
 
 /* 27 colors for Mandelbrot Set visualization (14 solid and 13 dithered) */
 
-#define MANLIMIT (27 << 3)
-#define MANCOLOR1(x) colors1[(x) >> 3]
-#define MANCOLOR2(x) colors2[(x) >> 3]
+#ifdef FIXED32
+/* just to make it a little faster for 32-bit version (216 iterations) */
+#define MANLIMIT (27<<3)
+#define MANCOLOR1(x) colors1[(x)>>3]
+#define MANCOLOR2(x) colors2[(x)>>3]
+#else
+/* regularly it is 432 iterations max */
+#define MANLIMIT (27<<4)
+#define MANCOLOR1(x) colors1[(x)>>4]
+#define MANCOLOR2(x) colors2[(x)>>4]
+#endif
 
 int colors[] = {15,15,6,6,7,7,2,2,3,3,1,1,11,11,9,9,8,8,13,13,12,12,14,14,4,4,0,0};
 
@@ -28,6 +38,7 @@ int colors[] = {15,15,6,6,7,7,2,2,3,3,1,1,11,11,9,9,8,8,13,13,12,12,14,14,4,4,0,
 #define TOREAL(x) (long)((x)*268435456.0)
 #define MUREAL(x,y) ((x)>>14)*((y)>>14)
 #endif
+
 /* Fixed Point 8.56 */
 #ifdef FIXED64
 #define FIXED
@@ -39,6 +50,7 @@ int colors[] = {15,15,6,6,7,7,2,2,3,3,1,1,11,11,9,9,8,8,13,13,12,12,14,14,4,4,0,
 #endif
 #define MUREAL(x,y) ((x)>>28)*((y)>>28)
 #endif
+
 /* 64-bit Floating Point */
 #ifndef FIXED
 #define REAL long double
@@ -48,6 +60,7 @@ int colors[] = {15,15,6,6,7,7,2,2,3,3,1,1,11,11,9,9,8,8,13,13,12,12,14,14,4,4,0,
 
 int main()
 {
+ char s[16];
  int y,c1,c2,c1n,c2n;
  unsigned char *p,saved[80];
  register int i,j;
@@ -69,7 +82,11 @@ int main()
  yc = TOREAL(-1.03500); /* y coord of point of interest */
  m = TOREAL(0.97); /* scale coefficient between frames */
  four = TOREAL(4); /* value to check that point is outside */
- ratio = TOREAL(0.75); /* assume 4:3 ratio */
+#if 1
+ ratio = TOREAL(3.0/4); /* assume 4:3 ratio (default) */
+#else
+ ratio = TOREAL(9.0/16); /* assume 16:9 ratio (for widescreen TV) */
+#endif
  hstep = TOREAL(1.0/158); /* horizontal step for 158 pixels */
  vstep = TOREAL(1.0/98); /* vertical step for 98 pixels */
  while(1)
@@ -149,6 +166,12 @@ int main()
      y1 -= sy;
    }
   }
+#if 1
+  *((int*)s) = 2037542744; /* little-endian magic number ;) */
+  y = xoseconds(); /* show minutes:seconds.hundreds (approx) */
+  sprintf(s+4,"%c %i:%02d.%02d",97,y/60,y%60,(xoframes()%60)*5/3);
+  xostring(1,23,s);
+#endif
   x0 = xc - MUREAL(xc-x0,m);
   y0 = yc - MUREAL(yc-y0,m);
   dx = MUREAL(dx,m);
