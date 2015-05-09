@@ -551,7 +551,7 @@ int xomode(void)
     return xorlib_curmode;
 }
 
-void xowaitvblank(void)
+void xowaitretrace(void)
 {
 #ifdef PIC32ANY
     unsigned long frame = xorlib_frames;
