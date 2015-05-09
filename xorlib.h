@@ -14,16 +14,19 @@ See for more info: http://www.xorlib.com
 
 /* Available external macros:
 
-   PIC32NTSC - for PIC32MX with 8 MHz crystal and NTSC timings (black and white modes)
-   PIC32NTSCQ - for PIC32MX with 14.31818 MHz crystal (with possible color burst mode)
-   PIC32PAL - for PIC32MX with 8 MHz crystal and PAL timings (black and white modes)
-   PIC32VGA - experimental mode for PIC32MX connected to VGA monitor (future)
-   DOS32 - for 32-bit DOS
-   DOS16 - for 16-bit DOS
-   TERM - emulation of some basic functions through terminal (ncurses)
+ + PIC32NTSC - for PIC32MX with 8 MHz crystal and NTSC timings (black and white modes)
+ + PIC32NTSCQ - for PIC32MX with 14.31818 MHz crystal (with possible color burst mode)
+ - PIC32PAL - for PIC32MX with 8 MHz crystal and PAL timings (black and white modes)
+ - PIC32VGA - experimental mode for PIC32MX connected to VGA monitor (future)
+ + DOS32 - for 32-bit DOS
+ - DOS16 - for 16-bit DOS
+ + TERM - emulation of some basic functions through terminal (ncurses)
 
-   DECODEGIF - compiled with GIF decoder (xdec_gif.c)
-   DECODEJPG - compiled with JPEG decoder (xdec_jpg.c)
+ - DECODEGIF - compiled with GIF decoder (xdec_gif.c)
+ - DECODEJPG - compiled with JPEG decoder (xdec_jpg.c)
+
+ + for supported macros
+ - for unsupported yet
 */
 
 /* NTSC compatible video modes - 320 bits per line */

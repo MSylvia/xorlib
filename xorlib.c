@@ -267,7 +267,7 @@ int xoinit(short m)
   switch(m)
   {
       default: m = XOMODE_320x200_MONO;
-
+          /* no break here! */
       case XOMODE_320x200_MONO:
       case XOMODE_160x100_GRAY5:
           xorlib_width = 320;
@@ -384,35 +384,92 @@ int xoinit(short m)
 
 #ifdef DOS32
   int i = 0;
-  xorlib_start = clock();
-  atexit(xoexit);
+  if(xorlib_curmode<0)
+  {
+    xorlib_start = clock();
+    atexit(xoexit);
+  }
+  xorlib_height = 200;
   switch(m)
   {
       default: m = XOMODE_320x200_MONO;
-
+          i++; /* no break here! */
+      case XOMODE_320x200_COL4:
+          i--;
       case XOMODE_320x200_MONO:
       case XOMODE_160x100_GRAY5:
+          /* no videomemory for last 2 modes */
           xorlib_width = 320;
-          _setvideomode(5);
+          _setvideomode(4);
           break;
 
       case XOMODE_640x200_MONO:
       case XOMODE_213x200_GRAY4:
           xorlib_width = 640;
           _setvideomode(6);
-          i = -1;
+          i--;
           break;
 
       case XOMODE_160x200_COL15:
       case XOMODE_160x100_COL120:
           xorlib_width = 640;
           _setvideomode(6);
-          i = -1;
-          outp(0x3D8,inp(0x3D8)&0xFB);
+          i--;
+          outp(0x3D8,inp(0x3D8)&0xFB); /* set composite mode */
+          break;
+
+      case XOMODE_320x200_COL256:
+          xorlib_width = 320;
+          _setvideomode(19);
+          i=-2;
+          break;
+
+      /* no vidememory for modes listed below: */
+
+      case XOMODE_160x200_COL16:
+          xorlib_width = 160;
+          _setvideomode(13);
+          break;
+
+      case XOMODE_320x200_COL16:
+          xorlib_width = 320;
+          _setvideomode(13);
+          break;
+
+      case XOMODE_160x200_COL256:
+          xorlib_width = 160;
+          _setvideomode(19);
+          break;
+
+      case XOMODE_640x200_COL16:
+          xorlib_width = 640;
+          _setvideomode(14);
+          break;
+
+      case XOMODE_640x350_COL16:
+          xorlib_width = 640;
+          xorlib_height = 350;
+          _setvideomode(16);
+          break;
+
+      case XOMODE_640x480_COL16:
+          xorlib_width = 640;
+          xorlib_height = 480;
+          _setvideomode(18);
+          break;
+
+      case XOMODE_800x600_COL16:
+          xorlib_width = 800;
+          xorlib_height = 600;
+          _setvideomode(258);
           break;
   }
   xorlib_maxcol = (xorlib_width>>3)-1;
-  if(i<0)
+  xorlib_maxrow = (xorlib_height>>3)-1;
+  if(m==XOMODE_160x100_GRAY5 || m==XOMODE_160x200_COL15 || m==XOMODE_160x100_COL120) xorlib_width = 160;
+  else if(m==XOMODE_213x200_GRAY4) xorlib_width = 213;
+  if(m==XOMODE_160x100_GRAY5 || m==XOMODE_160x100_COL120) xorlib_height = 100;
+  if(i==-1) /* CGA */
   {
      for(i=0;i<200;i++)
      {
@@ -420,23 +477,30 @@ int xoinit(short m)
        else    xorlib_ptry[i] = ((unsigned char*)0xB8000) + i*40;
      }
   }
+  else if(i==-2) /* VGA */
+  {
+     for(i=0;i<200;i++) xorlib_ptry[i] = ((unsigned char*)0xA0000) + i*320;
+  }
   xorlib_curmode = m;
 #endif
 
 #ifdef TERM
-  atexit(xoexit);
-  initscr();
-  raw();
-  keypad(stdscr, TRUE);
-  noecho();
-  nodelay(stdscr, TRUE);
+  if(xorlib_curmode<0)
+  { 
+    atexit(xoexit);
+    initscr();
+    raw();
+    keypad(stdscr, TRUE);
+    noecho();
+    nodelay(stdscr, TRUE);
+  }
   if(m<0) m = XOMODE_320x200_MONO;
   xorlib_curmode = m;
 #endif
 
 #ifdef DEBUG
   if(xorlib_debug==NULL) xorlib_debug = fopen("xorlib.out","wt");
-  if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xoinit\n");
+  if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xoinit %i\n",m);
 #endif
   return m;
 }
@@ -491,6 +555,15 @@ unsigned long xoconfig(void)
 #ifdef DOSANY
          (1<<XOMODE_160x200_COL15)|
          (1<<XOMODE_160x100_COL120)|
+         (1<<XOMODE_320x200_COL4)|
+         (1<<XOMODE_160x200_COL16)|
+         (1<<XOMODE_320x200_COL16)|
+         (1<<XOMODE_160x200_COL256)|
+         (1<<XOMODE_640x200_COL16)|
+         (1<<XOMODE_320x200_COL256)|
+         (1<<XOMODE_640x350_COL16)|
+         (1<<XOMODE_640x480_COL16)|
+         (1<<XOMODE_800x600_COL16)|
 #endif
           is|ib;
 }
@@ -557,6 +630,9 @@ void xowaitretrace(void)
     unsigned long frame = xorlib_frames;
     while(xorlib_frames==frame);
 #endif
+#ifdef DOS32
+    while(!(inp(0x3DA)&8));
+#endif
 }
 
 #ifdef PIC32ANY
@@ -591,15 +667,16 @@ unsigned char* xonextline(unsigned char *p)
     return Xonextline(p);
 #else
 #ifdef DOS32
+    if(p==NULL) return NULL;
     if(p!=xorlib_ptry[xorlib_cury])
     {
-      for(xorlib_cury=0;xorlib_cury<xorlib_height;xorlib_cury++)
+      for(xorlib_cury=0;xorlib_cury<200;xorlib_cury++)
       {
          if(xorlib_ptry[xorlib_cury]==p) break;
       }
-      if(xorlib_cury==xorlib_height) return NULL;
+      if(xorlib_cury==200) return NULL;
     }
-    if(++xorlib_cury >= xorlib_height) xorlib_cury = 0;
+    if(++xorlib_cury >= 200) xorlib_cury = 0;
     return xorlib_ptry[xorlib_cury];
 #else
     return NULL;
@@ -613,15 +690,16 @@ unsigned char* xoprevline(unsigned char *p)
     return p-xorlib_pitch;
 #else
 #ifdef DOS32
+    if(p==NULL) return NULL;
     if(p!=xorlib_ptry[xorlib_cury])
     {
-      for(xorlib_cury=0;xorlib_cury<xorlib_height;xorlib_cury++)
+      for(xorlib_cury=0;xorlib_cury<200;xorlib_cury++)
       {
          if(xorlib_ptry[xorlib_cury]==p) break;
       }
-      if(xorlib_cury==xorlib_height) return NULL;
+      if(xorlib_cury==200) return NULL;
     }
-    if(--xorlib_cury < 0) xorlib_cury = xorlib_height-1;
+    if(--xorlib_cury < 0) xorlib_cury = 199;
     return xorlib_ptry[xorlib_cury];
 #else
     return NULL;
@@ -654,14 +732,43 @@ int xochar(unsigned char x, unsigned char y, char c)
 #ifdef DEBUG
   if(xorlib_debug!=NULL) fprintf(xorlib_debug,"xochar %i,%i,'%c'#%2.2X\n",x,y,(c>=32)?c:' ',c);
 #endif
+#ifndef TERM
+#ifdef DOSANY
+  short xx,yy;
+  register int i,j;
+#endif
+  unsigned char* line_buffer;
+  register const unsigned char *ptr;
+#endif
   if(x>=0 && x<=xorlib_maxcol && y>=0 && y<=xorlib_maxrow)
   {
 #ifdef TERM
     mvaddch(y,x,c);
 #else
 #ifndef NOFONT
-    register const unsigned char *ptr = font8x8[(c&255)-FONT8X8_FIRST];
-    unsigned char *line_buffer = Xodirectline(y<<3);
+    ptr = font8x8[(c&255)-FONT8X8_FIRST];
+#ifdef DOSANY
+    if(xorlib_curmode<2) /* no videomemory */
+    {
+       xx = x<<3;
+       yy = y<<3;
+       for(j=0;j<8;j++)
+       {
+          i = ptr[j];
+          xopixel(  xx,yy,i&0x80);
+          xopixel(1+xx,yy,i&0x40);
+          xopixel(2+xx,yy,i&0x20);
+          xopixel(3+xx,yy,i&0x10);
+          xopixel(4+xx,yy,i&0x08);
+          xopixel(5+xx,yy,i&0x04);
+          xopixel(6+xx,yy,i&0x02);
+          xopixel(7+xx,yy,i&0x01);      
+          yy++;
+       }
+       return 1;
+    }
+#endif
+    line_buffer = Xodirectline(y<<3);
     line_buffer[x] = ptr[0]; line_buffer = Xonextline(line_buffer);
     line_buffer[x] = ptr[1]; line_buffer = Xonextline(line_buffer);
     line_buffer[x] = ptr[2]; line_buffer = Xonextline(line_buffer);
@@ -703,17 +810,83 @@ int xogray5(int i)
 
 int xopixel(short x, short y, char c)
 {
+#ifndef TERM
+   register unsigned char* line_buffer;
+#endif
    if(x<0||x>=DX) return 0;
    if(y<0||y>=DY) return 0;
 #ifdef TERM
    xochar(x,y,(c<10)?('0'+c):('A'+c-10)); /* text mode hack */
 #else
-   register unsigned char *line_buffer = Xodirectline(y);
+#ifdef DOS32
+   if(xorlib_curmode==XOMODE_320x200_MONO) /* no vidememory */
+   {
+      if(c > 0) _setcolor(3);
+      else if(c==0)
+                _setcolor(0);
+      else /* c < 0 */
+      {
+         if(_getpixel(x,y))
+                _setcolor(0);
+         else   _setcolor(3);
+      }
+      _setpixel(x,y);
+      return 1;
+   }
+   if(xorlib_curmode==XOMODE_160x100_GRAY5) /* no videomemory */
+   {
+      x<<=1;
+      y<<=1;
+      switch(c)
+      {
+        case 0:
+          _setcolor(0);
+          _setpixel(x,y);
+          _setpixel(x+1,y);
+          _setpixel(x,y+1);
+          _setpixel(x+1,y+1);
+          break;
+        case 1:
+          _setcolor(3);
+          _setpixel(x,y);
+          _setcolor(0);
+          _setpixel(x+1,y);
+          _setpixel(x,y+1);
+          _setpixel(x+1,y+1);
+          break;
+        case 2:
+          _setcolor(3);
+          _setpixel(x,y);
+          _setpixel(x+1,y+1);
+          _setcolor(0);
+          _setpixel(x+1,y);
+          _setpixel(x,y+1);
+          break;
+        case 3:
+          _setcolor(3);
+          _setpixel(x,y);
+          _setpixel(x+1,y);
+          _setpixel(x,y+1);
+          _setcolor(0);
+          _setpixel(x+1,y+1);
+          break;
+        case 4:
+          _setcolor(3);
+          _setpixel(x,y);
+          _setpixel(x+1,y);
+          _setpixel(x,y+1);
+          _setpixel(x+1,y+1);
+          break;
+      }
+      return 1;
+   }
+#endif
+   line_buffer = Xodirectline(y);
    if (c > 0)
      line_buffer[x >> 3] |= 1<<(7-(x&7));
    else if (c==0)
      line_buffer[x >> 3] &= ~(1<<(7-(x&7)));
-   else // c < 0
+   else /* c < 0 */
      line_buffer[x >> 3] ^= 1<<(7-(x&7));
 #endif
    return 1;
