@@ -1,6 +1,6 @@
 /* mandelbr.c - A.A.Shabarshin (May 2015) */
 
-/* THIS IS PUBLIC DOMAIN AND PROVIDED AS IS */
+/* THIS PUBLIC DOMAIN SOURCE CODE IS PROVIDED AS IS */
 
 #include <stdio.h> /* for sprintf */
 

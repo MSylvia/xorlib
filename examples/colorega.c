@@ -1,5 +1,7 @@
 /* colorega.c - A.A.Shabarshin (May 2015) */
 
+/* THIS PUBLIC DOMAIN SOURCE CODE IS PROVIDED AS IS */
+
 #include "xorlib.h"
 
 int main()
