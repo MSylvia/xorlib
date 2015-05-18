@@ -1,4 +1,4 @@
-/* decode_gif.c - Modified by A.A.Shabarshin in April 2015
+/* decode_gif.c - Modified by A.A.Shabarshin in Apr-May 2015
  *
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  * Copyright 2008 James Bursa <james@netsurf-browser.org>
@@ -9,7 +9,7 @@
  */
 
 //#include <assert.h>
-#include <errno.h>
+//#include <errno.h>
 //#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,7 +17,7 @@
 #include <sys/stat.h>
 //#include "libnsgif.h"
 
-#include "xdec_gif.c"
+#include "../xdec_gif.c"
 
 #define GIFNAME "shaos.gif"
 
@@ -270,32 +270,32 @@ unsigned long map2[4] = {
  RGB(0xFF,0xFF,0xFF)
 };
 
-#if 0
+#if 1
 
-/* Colors from picture of SONY LCD TV: */
+/* Colors from picture of SONY LCD TV screen (May 2015): */
 
 unsigned long map4[16] = {
- RGB(  4,   4,  12),
- RGB(  1,  19, 159),
- RGB( 70,   2, 172),
- RGB(  1,  86, 255),
- RGB(102,  15,  15),
- RGB(122, 133, 137),
- RGB(249,  49, 131),
- RGB(219, 118, 254),
- RGB(  0,  99,  34),
- RGB(  1, 207, 133),
- RGB(127, 133, 125),
- RGB( 15, 188, 253),
- RGB(138, 185,  54),
- RGB(102, 253,  90),
- RGB(253, 182,  74),
- RGB(220, 217, 202),
+ RGB(0,   0,   0),   // [0]
+ RGB(106, 38,  246), // [1]
+ RGB(171, 32,  245), // [2]
+ RGB(122, 86,  245), // [3]
+ RGB(246, 28,  7),   // [4]
+ RGB(167, 161, 169), // [5]
+ RGB(249, 92,  193), // [6]
+ RGB(250, 124, 238), // [7]
+ RGB(8,   170, 48),  // [8]
+ RGB(97,  235, 150), // [9]
+ RGB(148, 148, 152), // [10]
+ RGB(119, 207, 246), // [11]
+ RGB(177, 204, 20),  // [12]
+ RGB(124, 254, 142), // [13]
+ RGB(255, 183, 0),   // [14]
+ RGB(236, 221, 226)  // [15]
 };
 
 #else
 
-/* Colors from shifter CGA composite emulation in DOSBox: */
+/* Colors from shifted CGA composite emulation in DOSBox (matching TV colors): */
 
 unsigned long map4[16] = {
  RGB(0  , 0  , 0  ), /* #000000 H=0   S=0   V=0   0000 */
@@ -358,26 +358,3 @@ printf(">>> bitmap_destroy 0x%8.8X\n",bitmap);
 //	assert(bitmap);
 	free(bitmap);
 }
-
-/*
-oid bitmap_set_opaque(void *bitmap, unsigned char opaque)
-{
-printf(">>> bitmap_set_opaque 0x%8.8X %i\n",bitmap,opaque);
-//	(void) opaque;
-//	assert(bitmap);
-}
-
-unsigned char bitmap_test_opaque(void *bitmap)
-{
-printf(">>> bitmap_test_opaque 0x%8.8X\n",bitmap);
-//	assert(bitmap);
-	return 0;
-}
-
-void bitmap_modified(void *bitmap)
-{
-printf(">>> bitmap_modified 0x%8.8X\n",bitmap);
-//	assert(bitmap);
-	return;
-}
-*/
